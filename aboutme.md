@@ -3,11 +3,6 @@ layout: page
 title: About me
 subtitle: null
 ---
----
-layout: page
-title: About me
-subtitle:
----
 # Giới thiệu về Blog của Mình
 
 Xin chào! Mình là **Mạnh**, sinh năm 2001, một lập trình viên backend hiện đang làm việc tại **công ty an ninh mạng Viettel**. Dù mới có hơn một năm kinh nghiệm trong nghề, mình đã có những trải nghiệm thú vị với lĩnh vực này. Dù chưa thực sự giỏi, nhưng mình vẫn luôn cố gắng mỗi ngày và đặc biệt là vẫn giữ nguyên niềm đam mê với lập trình.
