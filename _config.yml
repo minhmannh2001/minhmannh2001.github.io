@@ -17,7 +17,7 @@ baseurl: ""
 title: Dev Path
 
 # Short description of your site
-description: Sharing the Backend Journey
+description: Sharing My Development Journey
 
 # --- Navigation bar options --- #
 
@@ -57,11 +57,11 @@ avatar: "/img/avatar.jpg"
 # Change all these values or delete the ones you don't want.
 # Important: you must keep the "name" parameter, everything else you can remove
 author:
-  name: Manh Nguyen Minh
+  name: Nguyễn Minh Mạnh
   email: "nguyenminhmannh2001@gmail.com"
   github: minhmannh2001
   twitter: fkratzert
-  linkedin: frederik-kratzert-226a33148
+  linkedin: https://www.linkedin.com/in/nguyenminhmannh2001/
   xing: yourname
   stackoverflow: yourlink
 
