@@ -7,19 +7,19 @@ excerpt: >-
 comments: false
 ---
 
-# Ngày 2: Thiết kế Context trong Web Framework Gee
+# Phần 2: Thiết kế Context trong Web Framework Gee
 
 👉 [Mã nguồn đầy đủ trên GitHub](https://github.com/minhmannh2001/7-days-golang)
 
-Đây là bài viết thứ hai trong loạt hướng dẫn xây dựng framework web Gee bằng ngôn ngữ Go trong 7 ngày.
+Đây là bài viết thứ hai trong loạt bài hướng dẫn xây dựng web framework Gee bằng ngôn ngữ Go trong 7 ngày.
 
 ## Mục tiêu hôm nay
 
 - Tách riêng module router để dễ mở rộng sau này
 - Thiết kế một cấu trúc Context để đóng gói các thông tin về request/response
-- Hỗ trợ trả dữ liệu dạng HTML, JSON, chuỗi, v.v...
+- Hỗ trợ trả dữ liệu dạng html, json, string, v.v...
 
-Tính đến cuối ngày thứ 2, toàn bộ framework có khoảng 140 dòng code, trong đó khoảng 90 dòng được thêm mới hôm nay.
+Tính đến hết phần 2 này, toàn bộ framework có khoảng 140 dòng code, trong đó khoảng 90 dòng được thêm mới hôm nay.
 
 ## Kết quả
 
@@ -46,17 +46,17 @@ func main() {
 
 ### Điểm đáng chú ý:
 
-- Tham số truyền vào các handler giờ là `*gee.Context`, giúp truy cập dễ dàng đến query, post form,...
+- Tham số truyền vào các handler bây giờ là `*gee.Context`, giúp truy cập dễ dàng đến các thông tin trong query, post form,...
 - Context cung cấp các hàm tiện ích như HTML, JSON, String để tạo phản hồi dễ dàng.
 
 ## Tại sao cần Context?
 
 Trong dịch vụ web, việc xử lý thường xoay quanh hai đối tượng:
 
-- `*http.Request`: chứa thông tin request (URL, header, body,...)
-- `http.ResponseWriter`: để gửi phản hồi
+- `*http.Request`: chứa thông tin request (url, header, body,...)
+- `http.ResponseWriter`: để gửi phản hồi về cho client
 
-Tuy nhiên, sử dụng trực tiếp hai đối tượng này khá rườm rà. Ví dụ để trả về JSON:
+Tuy nhiên, sử dụng trực tiếp hai đối tượng này khá rườm rà. Ví dụ để trả về json:
 
 ```go
 obj := map[string]interface{}{"name": "geektutu", "password": "1234"}
@@ -77,11 +77,11 @@ c.JSON(http.StatusOK, gee.H{
 })
 ```
 
-Không chỉ giúp rút gọn code, Context còn là nơi lưu trữ mọi thứ liên quan đến request hiện tại: params từ router, dữ liệu middleware, trạng thái,... Nó giống như một "kho báu" chứa mọi thông tin của phiên làm việc.
+Không chỉ giúp rút gọn code, Context còn là nơi lưu trữ mọi thứ liên quan đến request hiện tại: params từ router, dữ liệu của middleware,... Nó hoạt động như một kho chứa trung tâm, lưu trữ và quản lý toàn bộ thông tin liên quan đến một phiên xử lý HTTP.
 
 ## Cấu trúc Context
 
-File: `day2-context/gee/context.go`
+File: [part-2-context/gee/context.go](https://github.com/minhmannh2001/7-days-golang/blob/master/gee-web/part-2-context/gee/context.go)
 
 File này định nghĩa một kiểu dữ liệu quan trọng: Context — nơi tập trung toàn bộ thông tin liên quan đến request hiện tại.
 
@@ -168,7 +168,7 @@ Thiết lập một header HTTP, như Content-Type, Authorization,...
 
 ### Trả về phản hồi (Response)
 
-Trả chuỗi văn bản thuần:
+Trả chuỗi văn bản thuần (string):
 
 ```go
 func (c *Context) String(code int, format string, values ...interface{}) {
@@ -222,7 +222,7 @@ Tóm lại: Context giúp gom toàn bộ thao tác liên quan đến một reque
 
 ## Tách riêng router
 
-File: `day2-context/gee/router.go`
+File: [part-2-context/gee/router.go](https://github.com/minhmannh2001/7-days-golang/blob/master/gee-web/part-2-context/gee/router.go)
 
 ```go
 type router struct {
@@ -249,13 +249,13 @@ func (r *router) handle(c *Context) {
 }
 ```
 
-Chúng ta đã tách các cấu trúc và phương thức liên quan đến định tuyến (routing) ra một file riêng là router.go, thay vì để chung trong engine như trước. Việc tách này giúp tổ chức mã rõ ràng hơn và tạo điều kiện thuận lợi để mở rộng tính năng router sau này, ví dụ như hỗ trợ định tuyến động (dynamic routing với tham số :name, *path...).
+Chúng ta đã tách các cấu trúc và phương thức liên quan đến định tuyến (routing) ra một file riêng là router.go, thay vì để chung trong engine như trước. Việc tách này giúp tổ chức mã nguồn rõ ràng hơn và tạo điều kiện thuận lợi để mở rộng tính năng router sau này, ví dụ như hỗ trợ định tuyến động (dynamic routing với tham số :name, *filepath,...).
 
-Bên cạnh đó, phương thức handle trong router cũng được điều chỉnh nhẹ: thay vì nhận vào đối tượng http.ResponseWriter và *http.Request, handler giờ đây nhận một con trỏ đến Context. Nhờ đó, trong mỗi handler, ta có thể sử dụng các tiện ích đã định nghĩa trong Context như lấy query, post form, trả về JSON, v.v., giúp việc viết route handler trở nên ngắn gọn và tiện lợi hơn.
+Bên cạnh đó, phương thức handle trong router cũng được điều chỉnh nhẹ: thay vì nhận vào đối tượng http.ResponseWriter và *http.Request, handler giờ đây nhận một con trỏ đến Context. Nhờ đó, trong mỗi handler, ta có thể sử dụng các tiện ích đã định nghĩa trong Context như lấy dữ liệu từ query, post form, trả về JSON, v.v., giúp việc viết route handler trở nên ngắn gọn và tiện lợi hơn.
 
 ## Entry point framework
 
-File: `day2-context/gee/gee.go`
+File: [part-2-context/gee/gee.go](https://github.com/minhmannh2001/7-days-golang/blob/master/gee-web/part-2-context/gee/gee.go)
 
 ```go
 type HandlerFunc func(*Context)
@@ -290,9 +290,9 @@ func (engine *Engine) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 }
 ```
 
-Framework đơn giản nhưng đã đủ khả năng xử lý request và route. Việc xây dựng Context giúp việc phát triển sau này thuận tiện hơn.
+Hiện tại framework vẫn còn đơn giản nhưng đã đủ khả năng xử lý request và route. Việc xây dựng Context giúp việc phát triển sau này thuận tiện hơn.
 
-Sau khi tách riêng các đoạn mã liên quan đến router vào file router.go, cấu trúc của file gee.go trở nên đơn giản hơn rất nhiều. Điều quan trọng nhất là struct Engine của framework đã chính thức "tiếp quản" toàn bộ các HTTP request bằng cách triển khai interface ServeHTTP.
+Sau khi tách riêng các đoạn mã nguồn liên quan đến router vào file router.go, cấu trúc của file gee.go trở nên đơn giản hơn rất nhiều.
 
 So với phiên bản ở ngày đầu tiên, phương thức ServeHTTP cũng đã được chỉnh sửa một chút: trước khi gọi router.handle, ta khởi tạo một đối tượng Context mới và truyền vào. Đối tượng Context này hiện vẫn còn đơn giản, chỉ bao bọc hai tham số ban đầu là http.ResponseWriter và *http.Request, nhưng về sau nó sẽ dần được mở rộng với nhiều tiện ích mạnh mẽ hơn.
 
@@ -333,4 +333,4 @@ Chúng ta cũng đã tổ chức lại cấu trúc code, tách riêng phần rou
 
 ---
 
-Bài viết tiếp theo (Ngày 3) sẽ tập trung vào việc triển khai router động với cấu trúc dữ liệu Trie, cho phép định nghĩa các route với tham số động như `:name` và `*filepath`.
+Bài viết tiếp theo (Phần 3) sẽ tập trung vào việc triển khai router động với cấu trúc dữ liệu Trie, cho phép định nghĩa các route với tham số động như `:name` và `*filepath`.
