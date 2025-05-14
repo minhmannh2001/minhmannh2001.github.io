@@ -325,9 +325,9 @@ $ curl "http://localhost:9999/xxx"
 
 Như vậy, các tính năng cơ bản như routing GET/POST, lấy tham số từ query hoặc form, và trả về JSON đã hoạt động tốt. Đồng thời, các route không được định nghĩa cũng được xử lý hợp lý với thông báo lỗi 404.
 
-## Kết luận ngày 2
+## Kết luận phần 2
 
-Trong ngày thứ 2, chúng ta đã tạo ra một cấu trúc Context để đóng gói thông tin request/response và cung cấp các phương thức tiện ích. Điều này giúp đơn giản hóa việc viết handler và tạo nền tảng cho các tính năng phức tạp hơn sau này.
+Trong phần thứ 2, chúng ta đã tạo ra một cấu trúc Context để đóng gói thông tin request/response và cung cấp các phương thức tiện ích. Điều này giúp đơn giản hóa việc viết handler và tạo nền tảng cho các tính năng phức tạp hơn sau này.
 
 Chúng ta cũng đã tổ chức lại cấu trúc code, tách riêng phần router để dễ dàng mở rộng trong tương lai. Framework Gee đã bắt đầu có hình dáng của một web framework thực thụ, với khả năng xử lý các loại request và response khác nhau một cách linh hoạt.
 
