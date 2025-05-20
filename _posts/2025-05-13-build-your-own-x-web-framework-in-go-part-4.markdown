@@ -1,7 +1,7 @@
 ---
 layout: post
 title: 'Build your own X: Tự xây dựng một web framework với Go - Phần 3'
-date: '2025-05-09 23:58'
+date: '2025-05-13 23:58'
 excerpt: >-
   Phần 3 trong chuỗi bài về xây dựng web framework với Go. Trong bài này, chúng ta sẽ học cách triển khai định tuyến động (dynamic routing) bằng cây tiền tố (Trie tree) thay vì sử dụng map như trước đây.
 comments: false
@@ -245,7 +245,7 @@ Khi một request đến `/hello/geektutu`:
 3. Đã duyệt hết URL, kiểm tra node ":name" có phải node lá không → Đúng (pattern="/hello/:name")
 4. Kết quả: Tìm thấy route "/hello/:name" với params["name"] = "geektutu"
 
-Đây chính là cách cây Trie giúp chúng ta xử lý định tuyến động một cách hiệu quả!## 4. Tích hợp Router với Framework
+Đây chính là cách cây Trie giúp chúng ta xử lý định tuyến động một cách hiệu quả!
 
 Bây giờ chúng ta đã có cây Trie hoạt động tốt, bước tiếp theo là tích hợp nó vào framework của chúng ta. Đây là lúc mọi thứ bắt đầu kết nối với nhau!
 
