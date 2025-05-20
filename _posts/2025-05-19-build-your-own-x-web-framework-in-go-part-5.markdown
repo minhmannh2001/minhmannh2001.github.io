@@ -1,7 +1,7 @@
 ---
 layout: post
 title: 'Build your own X: Tự xây dựng một web framework với Go - Phần 4'
-date: '2025-05-20 21:26'
+date: '2025-05-19 21:26'
 excerpt: >-
   Phần 4 trong chuỗi bài về xây dựng web framework với Go. Trong bài này, chúng ta sẽ triển khai Route Group Control - một tính năng quan trọng giúp nhóm các route lại với nhau, hỗ trợ nhóm lồng nhau và tạo nền tảng cho việc áp dụng middleware.
 comments: false
