@@ -263,5 +263,66 @@ Trong phần này, chúng ta đã:
 3. Triển khai middleware Logger để theo dõi thời gian xử lý request
 4. Hỗ trợ middleware ở cấp độ toàn cục và cấp độ nhóm
 
+### Kiến trúc tổng thể của Gee Framework
+
+Sau 6 phần, Gee framework đã có một kiến trúc khá hoàn chỉnh với các thành phần chính sau:
+
+- **Engine**: Thành phần trung tâm, triển khai interface `http.Handler` và điều phối toàn bộ quá trình xử lý request.
+- **RouterGroup**: Quản lý các nhóm route, cho phép tổ chức API theo cấu trúc phân cấp và áp dụng middleware cho từng nhóm.
+- **Router**: Quản lý việc định tuyến với cấu trúc dữ liệu Trie, hỗ trợ các route động với tham số.
+- **Context**: Đóng gói thông tin request/response và cung cấp các phương thức tiện ích.
+- **Middleware**: Các thành phần trung gian xử lý request trước và sau khi đi qua handler chính.
+
+Dưới đây là sơ đồ minh họa luồng xử lý một request trong Gee framework:
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Engine
+    participant RouterGroup
+    participant Router
+    participant Context
+    participant Middleware
+    participant Handler
+    
+    Client->>Engine: HTTP Request
+    Engine->>RouterGroup: Find matching groups
+    RouterGroup->>Engine: Return middlewares
+    Engine->>Context: Create new Context
+    Engine->>Context: Set middlewares
+    Engine->>Router: handle(Context)
+    Router->>Router: getRoute(method, path)
+    Router->>Context: Set params
+    Router->>Context: Add handler to handlers
+    Router->>Context: c.Next()
+    
+    loop Middleware Chain
+        Context->>Middleware: Execute middleware
+        Middleware->>Context: c.Next()
+    end
+    
+    Context->>Handler: Execute handler
+    Handler->>Context: Set response (HTML/JSON/String)
+    Context->>Engine: Return
+    Engine->>Client: HTTP Response
+```
+
+Khi một HTTP request đến, quá trình xử lý diễn ra như sau:
+
+1. **Engine** nhận request thông qua phương thức `ServeHTTP`
+2. **Engine** tìm các **RouterGroup** phù hợp với đường dẫn của request
+3. Các middleware từ các nhóm phù hợp được thu thập
+4. Một đối tượng **Context** mới được tạo và các middleware được gán vào
+5. **Router** tìm handler phù hợp dựa trên method và path
+6. Các tham số động từ URL được trích xuất và lưu vào Context
+7. Handler được thêm vào danh sách handlers trong Context
+8. Phương thức `Next()` được gọi, bắt đầu chuỗi thực thi middleware
+9. Các middleware được thực thi theo thứ tự, với khả năng thực hiện logic trước và sau khi xử lý request
+10. Handler chính xử lý request và thiết lập response
+11. Response được trả về cho client
+
+Kiến trúc này cung cấp một nền tảng linh hoạt và mở rộng, cho phép người dùng dễ dàng tùy chỉnh và mở rộng framework theo nhu cầu cụ thể.
+
 Middleware là một tính năng mạnh mẽ, cho phép mở rộng chức năng của framework mà không cần sửa đổi mã nguồn gốc. Trong phần tiếp theo, chúng ta sẽ tìm hiểu về cách render template HTML - một tính năng quan trọng khác của web framework hiện đại.
+
 
