@@ -15,9 +15,9 @@ Mục tiêu là vừa học, vừa viết, không trì hoãn. Mình hy vọng qu
 
 ## Giới thiệu về chuỗi bài viết xây dựng web framework
 
-Đây là bài viết mở đầu cho chuỗi bài viết mình dịch và diễn giải lại loạt bài hướng dẫn xây dựng Web Framework Gee bằng ngôn ngữ Go, được đăng trên blog geektutu.com — một blog với chuỗi bài 7 ngày học golang khá hay. 
+Đây là bài viết mở đầu cho chuỗi bài viết mình dịch và diễn giải lại loạt bài hướng dẫn xây dựng Web Framework Gee bằng ngôn ngữ Go, được đăng trên blog geektutu.com — một blog với các chuỗi bài với nội dung làm một thứ gì đó trong vòng 7 ngày, mà mình thấy khá hay. 
 
-Mặc dù hiện nay việc đọc tài liệu tiếng Trung đã dễ dàng hơn rất nhiều nhờ Google Dịch hay các công cụ AI, nhưng mình vẫn muốn dịch và diễn giải lại bằng góc nhìn của riêng mình. Vừa là cách để tự học, vừa là cơ hội để chia sẻ lại cho các bạn theo cách gần gũi, dễ hiểu hơn. Mình hy vọng qua chuỗi bài này, các bạn sẽ có cảm giác như đang có một người bạn đồng hành cùng học, cùng tìm hiểu và cùng vượt qua từng phần kiến thức một cách nhẹ nhàng hơn.
+Mặc dù hiện nay việc đọc tài liệu tiếng ngước ngoài đã dễ dàng hơn rất nhiều nhờ Google Dịch hay các công cụ AI, nhưng mình vẫn muốn dịch và diễn giải lại bằng góc nhìn của riêng mình. Vừa là cách để tự học, vừa là cơ hội để chia sẻ lại cho các bạn theo cách gần gũi, dễ hiểu hơn. Mình hy vọng qua chuỗi bài này, các bạn sẽ có cảm giác như đang có một người bạn đồng hành cùng học, cùng tìm hiểu và cùng vượt qua từng phần kiến thức một cách nhẹ nhàng hơn.
 
 Hy vọng chuỗi bài sẽ hữu ích cho các bạn đang học hoặc làm việc với Golang, hoặc đơn giản là đang tò mò muốn biết một framework web được xây dựng như thế nào từ con số 0.
 
@@ -37,12 +37,12 @@ Nếu bạn là người thích tìm hiểu từ gốc rễ, hoặc đơn giản
 
 Nội dung chuỗi gồm 7 phần:
 
-1. **Phần 1**: Tổng quan về thư viện net/http và http.Handler interface
-2. **Phần 2**: Context — xây dựng lớp trung gian để truyền dữ liệu qua các handler
-3. **Phần 3**: Router sử dụng cây Trie để tăng hiệu năng định tuyến
-4. **Phần 4**: Group control — tổ chức các route hợp lý
-5. **Phần 5**: Middleware — xây dựng các chức năng cắm ngoài
-6. **Phần 6**: Template HTML — render giao diện người dùng
+1. **[Phần 1](https://minhmannh2001.github.io/2025/05/01/build-your-own-x-web-framework-in-go-part-2.html)**: Tổng quan về thư viện net/http và http.Handler interface
+2. **[Phần 2](https://minhmannh2001.github.io/2025/05/09/build-your-own-x-web-framework-in-go-part-3.html)**: Context — xây dựng lớp trung gian để truyền dữ liệu qua các handler
+3. **[Phần 3](https://minhmannh2001.github.io/2025/05/13/build-your-own-x-web-framework-in-go-part-4.html)**: Router sử dụng cây Trie để tăng hiệu năng định tuyến
+4. **[Phần 4](https://minhmannh2001.github.io/2025/05/19/build-your-own-x-web-framework-in-go-part-5.html)**: Group control — tổ chức các route hợp lý
+5. **[Phần 5](https://minhmannh2001.github.io/2025/05/22/build-your-own-x-web-framework-in-go-part-6.html)**: Middleware — xây dựng các chức năng cắm ngoài
+6. **[Phần 6](https://minhmannh2001.github.io/2025/05/23/build-your-own-x-web-framework-in-go-part-7.html)**: Template HTML — render giao diện người dùng
 7. **Phần 7**: Cơ chế khôi phục khi xảy ra panic
 
 Hy vọng bản dịch này giúp bạn hiểu rõ hơn về cách các framework web hoạt động từ bên trong — và có thể truyền cảm hứng cho bạn trong hành trình làm chủ ngôn ngữ Go và lập trình backend.

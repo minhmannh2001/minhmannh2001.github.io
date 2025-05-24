@@ -523,7 +523,9 @@ func main() {
 }
 ```
 
-Khi truy cập trang chủ, template được render bình thường và tệp CSS tĩnh được tải thành công. Đây là một ví dụ hoàn chỉnh cho thấy cách Gee framework hỗ trợ cả phục vụ tài nguyên tĩnh và render template HTML.
+Khi truy cập trang chủ, template được render bình thường và tệp CSS tĩnh được tải thành công. 
+![Homepage demo](/img/gee-web/part-6/homepage_demo.png "Homepage demo")
+Đây là một ví dụ hoàn chỉnh cho thấy cách Gee framework hỗ trợ cả phục vụ tài nguyên tĩnh và render template HTML.
 
 Các route trong ví dụ này minh họa các tính năng khác nhau:
 - `/`: Hiển thị template đơn giản với tài nguyên CSS tĩnh
