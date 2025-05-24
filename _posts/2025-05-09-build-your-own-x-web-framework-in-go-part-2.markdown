@@ -1,7 +1,7 @@
 ---
 layout: post
 title: 'Build your own X: Tự xây dựng một web framework với Go - Phần 1'
-date: '2025-05-09 23:58'
+date: '2025-05-01 23:58'
 excerpt: >-
   Bài đầu tiên trong chuỗi bài về việc xây dựng web framework với Go. Tìm hiểu về thư viện net/http, interface http.Handler và cách tạo một router đơn giản để xử lý các HTTP request. Bắt đầu hành trình tạo ra framework Gee từ những khái niệm cơ bản nhất.
 comments: false
