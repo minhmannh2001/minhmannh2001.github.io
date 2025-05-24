@@ -45,7 +45,7 @@ Bài viết này tổng hợp những nguồn tài liệu giá trị mà mình �
 
 ## Sách kỹ thuật đáng đọc
 
-- Designing Data-Intensive Applications (Martin Kleppmann) - Kinh thánh về thiết kế hệ thống xử lý dữ liệu quy mô lớn.
+- Designing Data-Intensive Applications (Martin Kleppmann) - Cuốn sách gối đầu giường về thiết kế hệ thống xử lý dữ liệu quy mô lớn.
 - Database Internals (Alex Petrov) - Khám phá sâu bên trong cơ sở dữ liệu hiện đại.
 - Microservices Patterns (Chris Richardson) - Hướng dẫn toàn diện về thiết kế, triển khai microservices.
 - But How Do It Know? (J. Clark Scott) - Giải thích cách máy tính hoạt động từ cơ bản.

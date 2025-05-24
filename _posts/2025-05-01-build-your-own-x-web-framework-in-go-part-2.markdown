@@ -185,6 +185,50 @@ func main() {
 
 Nếu bạn đã từng dùng qua Gin, chắc hẳn thấy cách sử dụng này rất quen thuộc. Thực tế, Gee được viết với mục tiêu học hỏi từ Gin — một framework nhẹ, nhanh và rất phổ biến trong cộng đồng Go.
 
+
+## Demo
+
+Chạy chương trình với lệnh `go run main.go` và sử dụng công cụ curl để truy cập. Kết quả giống với phiên bản ban đầu:
+
+```
+$ curl http://localhost:9999/ 
+URL.Path = "/"
+$ curl http://localhost:9999/hello 
+Header["Accept"] = ["*/*"] 
+Header["User-Agent"] = ["curl/7.54.0"] 
+$ curl http://localhost:9999/world 
+404 NOT FOUND: /world
+```
+
+```mermaid
+sequenceDiagram
+    participant Client as Client
+    participant Server as HTTP Server
+    participant Engine as Engine
+    
+    Client->>Server: HTTP Request
+    Server->>Engine: ServeHTTP(w, req)
+    
+    alt URL Path is "/"
+        Engine->>Client: "URL.Path = /"
+    else URL Path is "/hello"
+        Engine->>Client: Headers information
+    else Other paths
+        Engine->>Client: "404 NOT FOUND"
+    end
+```
+
+**Giải thích biểu đồ:**
+
+1. **Client** gửi HTTP request đến server.
+2. **HTTP Server** (thư viện net/http) nhận request và gọi phương thức `ServeHTTP` của đối tượng Engine mà chúng ta đã đăng ký.
+3. **Engine** kiểm tra đường dẫn URL và xử lý theo các trường hợp:
+   - Nếu đường dẫn là "/", trả về thông tin về đường dẫn
+   - Nếu đường dẫn là "/hello", trả về thông tin về headers
+   - Với các đường dẫn khác, trả về thông báo lỗi 404
+
+Đây là luồng xử lý cơ bản của phiên bản hiện tại của framework. Mặc dù đơn giản, nhưng nó đã cho thấy cách chúng ta có thể kiểm soát hoàn toàn quá trình xử lý HTTP request bằng cách triển khai interface `http.Handler`.
+
 ## Kết luận phần 1
 
 Tới đây, chúng ta đã hoàn thiện được một prototype cơ bản của framework Gee:
