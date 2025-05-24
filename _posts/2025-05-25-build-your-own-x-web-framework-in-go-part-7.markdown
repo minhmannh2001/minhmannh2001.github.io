@@ -1,7 +1,7 @@
 ---
 layout: post
 title: 'Build your own X: Tự xây dựng web framework với Go - Phần 6'
-date: '2025-05-22 20:30'
+date: '2025-05-23 20:24'
 excerpt: >-
   Phần 6 trong chuỗi bài về xây dựng web framework với Go. Bài viết này tập trung vào việc hỗ trợ phục vụ tài nguyên tĩnh và render template HTML - hai tính năng quan trọng cho phát triển web server-side.
 comments: false
@@ -49,7 +49,7 @@ Trong bài viết này, chúng ta sẽ tập trung vào việc xây dựng các 
 
 ## 2. Phục vụ tài nguyên tĩnh
 
-### Tại sao cần phục vụ tài nguyên tĩnh?
+### 2.1. Tại sao cần phục vụ tài nguyên tĩnh?
 
 Một trang web hoàn chỉnh không chỉ có HTML, mà còn cần nhiều loại tài nguyên khác như:
 - CSS để định dạng giao diện
@@ -58,7 +58,7 @@ Một trang web hoàn chỉnh không chỉ có HTML, mà còn cần nhiều lo�
 
 Các tài nguyên này được gọi là "tĩnh" vì chúng không thay đổi theo mỗi request. Một framework web cần có khả năng phục vụ các tài nguyên này một cách hiệu quả.
 
-### Cách thức hoạt động
+### 2.2. Cách thức hoạt động
 
 Khi người dùng truy cập một trang web, trình duyệt sẽ tự động gửi các request để tải các tài nguyên được tham chiếu trong HTML (như CSS, JavaScript, hình ảnh). Ví dụ, khi HTML có dòng:
 
@@ -73,7 +73,7 @@ Framework của chúng ta cần:
 2. Tìm tệp tương ứng trong hệ thống tệp của server
 3. Trả về nội dung tệp với header phù hợp
 
-### Triển khai trong Gee
+### 2.3. Triển khai trong Gee
 
 Để triển khai tính năng này, chúng ta sẽ tận dụng hai thành phần đã xây dựng trước đó:
 1. **Định tuyến với wildcard**: Đã hỗ trợ trong phần 4 với pattern như `/*filepath`
@@ -99,7 +99,7 @@ sequenceDiagram
     Handler->>Client: Phản hồi với nội dung tệp + Content-Type phù hợp
 </div>
 
-### Mã nguồn triển khai
+### 2.4. Mã nguồn triển khai
 
 ```go
 // Tạo handler cho tài nguyên tĩnh
@@ -141,7 +141,7 @@ Giải thích mã nguồn:
    - Kiểm tra xem tệp có tồn tại không
    - Nếu tồn tại, sử dụng `fileServer.ServeHTTP()` để phục vụ tệp
 
-### Cách sử dụng
+### 2.5. Cách sử dụng
 
 ```go
 r := gee.New() 
@@ -203,6 +203,23 @@ sequenceDiagram
     Template->>Context: HTML đã render
     Context->>App: Phản hồi với HTML
 </div>
+
+**Giải thích biểu đồ:**
+
+1. **Khởi tạo và cấu hình cho web app:**
+   - Ứng dụng gọi `LoadHTMLGlob("templates/*")` để tải tất cả các template từ thư mục templates
+   - Engine sẽ sử dụng `html/template` để tải và phân tích các template
+   - Ứng dụng gọi `SetFuncMap(funcMap)` để đăng ký các hàm tùy chỉnh
+   - Engine chuyển các hàm này cho `html/template` để sử dụng trong quá trình render
+
+2. **Quá trình render:**
+   - Khi xử lý request, ứng dụng gọi `c.HTML(200, "index.tmpl", data)` để render template
+   - Context gọi `ExecuteTemplate("index.tmpl", data)` trên đối tượng template
+   - Template engine xử lý template, thay thế biến và gọi các hàm tùy chỉnh
+   - Kết quả HTML được trả về Context
+   - Context gửi HTML đã render về cho ứng dụng, sau đó trả về cho client
+
+Biểu đồ này minh họa rõ ràng luồng dữ liệu và trách nhiệm của từng thành phần trong quá trình render template HTML.
 
 #### 3.3.1. Cập nhật cấu trúc Engine
 
@@ -435,12 +452,90 @@ Ngày tháng
 Ngày hiện tại: 2023-05-25
 ```
 
-## 4. Tổng kết
+## 4. Demo sử dụng
+### Cấu trúc thư mục cuối cùng:
+
+```
+---gee/
+---static/
+   |---css/
+        |---geektutu.css
+   |---file1.txt
+---templates/
+   |---arr.tmpl
+   |---css.tmpl
+   |---custom_func.tmpl
+---main.go
+```
+
+### Ví dụ về một template:
+
+```html
+<!-- templates/css.tmpl -->
+<html>
+    <link rel="stylesheet" href="/assets/css/geektutu.css">
+    <p>geektutu.css đã được tải</p>
+</html>
+```
+
+### Mã nguồn chính:
+
+```go
+type student struct {
+    Name string
+    Age  int8
+}
+
+func FormatAsDate(t time.Time) string {
+    year, month, day := t.Date()
+    return fmt.Sprintf("%d-%02d-%02d", year, month, day)
+}
+
+func main() {
+    r := gee.New()
+    r.Use(gee.Logger())
+    r.SetFuncMap(template.FuncMap{
+        "FormatAsDate": FormatAsDate,
+    })
+    r.LoadHTMLGlob("templates/*")
+    r.Static("/assets", "./static")
+
+    stu1 := &student{Name: "Geektutu", Age: 20}
+    stu2 := &student{Name: "Jack", Age: 22}
+    r.GET("/", func(c *gee.Context) {
+        c.HTML(http.StatusOK, "css.tmpl", nil)
+    })
+    r.GET("/students", func(c *gee.Context) {
+        c.HTML(http.StatusOK, "arr.tmpl", gee.H{
+            "title":  "gee",
+            "stuArr": [2]*student{stu1, stu2},
+        })
+    })
+
+    r.GET("/date", func(c *gee.Context) {
+        c.HTML(http.StatusOK, "custom_func.tmpl", gee.H{
+            "title": "gee",
+            "now":   time.Date(2019, 8, 17, 0, 0, 0, 0, time.UTC),
+        })
+    })
+
+    r.Run(":9999")
+}
+```
+
+Khi truy cập trang chủ, template được render bình thường và tệp CSS tĩnh được tải thành công. Đây là một ví dụ hoàn chỉnh cho thấy cách Gee framework hỗ trợ cả phục vụ tài nguyên tĩnh và render template HTML.
+
+Các route trong ví dụ này minh họa các tính năng khác nhau:
+- `/`: Hiển thị template đơn giản với tài nguyên CSS tĩnh
+- `/students`: Hiển thị danh sách đối tượng với vòng lặp và điều kiện
+- `/date`: Sử dụng hàm tùy chỉnh để định dạng thời gian
+
+## 5. Tổng kết
 
 Trong phần thứ sáu này, chúng ta đã bổ sung cho framework Gee hai tính năng quan trọng:
 
 1. **Phục vụ tài nguyên tĩnh**: Cho phép framework phục vụ các tệp tĩnh như CSS, JavaScript và hình ảnh.
-2. **Render template HTML**: Hỗ trợ render template HTML với các biến động và hàm tùy chỉnh.
+2. **Render template HTML**: Hỗ trợ render template HTML với các biến động và hàm render tùy chỉnh.
 
 Đến đây, Gee framework đã có những tính năng cơ bản của một web framework hiện đại:
 - Xử lý HTTP request/response
@@ -450,6 +545,7 @@ Trong phần thứ sáu này, chúng ta đã bổ sung cho framework Gee hai tí
 - Phục vụ tài nguyên tĩnh
 
 Trong phần tiếp theo và cũng là phần cuối cùng của chuỗi bài viết, chúng ta sẽ tìm hiểu về cơ chế khôi phục từ lỗi (error recovery) - một tính năng quan trọng giúp ứng dụng web của chúng ta có khả năng chống chịu lỗi tốt hơn. Hy vọng chuỗi bài viết này đã mang lại cho bạn những kiến thức bổ ích và cảm hứng để tiếp tục khám phá thế giới phát triển web với Go!
+
 
 
 
