@@ -43,6 +43,6 @@ Nội dung chuỗi gồm 7 phần:
 4. **[Phần 4](https://minhmannh2001.github.io/2025/05/19/build-your-own-x-web-framework-in-go-part-5.html)**: Group control — tổ chức các route hợp lý
 5. **[Phần 5](https://minhmannh2001.github.io/2025/05/22/build-your-own-x-web-framework-in-go-part-6.html)**: Middleware — xây dựng các chức năng cắm ngoài
 6. **[Phần 6](https://minhmannh2001.github.io/2025/05/23/build-your-own-x-web-framework-in-go-part-7.html)**: Template HTML — render giao diện người dùng
-7. **Phần 7**: Cơ chế khôi phục khi xảy ra panic
+7. **[Phần 7](https://minhmannh2001.github.io/2025/05/26/build-your-own-x-web-framework-in-go-part-8.html)**: Cơ chế khôi phục khi xảy ra panic
 
 Hy vọng bản dịch này giúp bạn hiểu rõ hơn về cách các framework web hoạt động từ bên trong — và có thể truyền cảm hứng cho bạn trong hành trình làm chủ ngôn ngữ Go và lập trình backend.
