@@ -1,6 +1,6 @@
 ---
 layout: post
-title: 'Build your own X: Tự xây dựng một ORM framework với Go - Phần 1: Cơ bản về Database/SQL'
+title: 'Build your own X: Tự xây dựng một ORM framework với Go - Phần 1'
 date: '2025-06-02 14:30'
 excerpt: >-
   Phần 1 trong chuỗi bài về xây dựng ORM framework với Go. Bài viết này tập trung vào việc tìm hiểu cơ bản về SQLite, sử dụng thư viện database/sql của Go và xây dựng cấu trúc cơ bản cho framework ORM.
