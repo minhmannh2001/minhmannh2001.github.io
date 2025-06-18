@@ -188,25 +188,25 @@ So với các ORM framework phổ biến như GORM, xorm, GeeORM đơn giản h�
 
 Chuỗi bài viết này sẽ được chia thành 7 phần, mỗi phần tập trung vào một khía cạnh của ORM framework:
 
-1. **Ngày 1: Cơ bản về Database/SQL**  
+1. **[Phần 1: Cơ bản về Database/SQL](https://minhmannh2001.github.io/2025/06/02/build-your-own-x-orm-framework-in-go-part-1.html)**  
    Tìm hiểu cách kết nối và tương tác với cơ sở dữ liệu trong Go.
 
-2. **Ngày 2: Ánh xạ cấu trúc bảng đối tượng**  
+2. **[Phần 2: Ánh xạ cấu trúc bảng đối tượng](https://minhmannh2001.github.io/2025/06/03/build-your-own-x-orm-framework-in-go-part-2.html)**  
    Sử dụng reflection để ánh xạ struct Go thành bảng cơ sở dữ liệu.
 
-3. **Ngày 3: Tạo và truy vấn bản ghi**  
+3. **[Phần 3: Tạo và truy vấn bản ghi](https://minhmannh2001.github.io/2025/06/06/build-your-own-x-orm-framework-in-go-part-3.html)**  
    Triển khai các phương thức để thêm và truy vấn dữ liệu.
 
-4. **Ngày 4: Chuỗi điều kiện, cập nhật và xóa**  
+4. **[Phần 4: Chain Call (Gọi chuỗi), cập nhật và xóa](https://minhmannh2001.github.io/2025/06/09/build-your-own-x-orm-framework-in-go-part-4.html)**  
    Xây dựng API chuỗi để tạo các truy vấn phức tạp và thực hiện cập nhật/xóa.
 
-5. **Ngày 5: Triển khai Hooks**  
+5. **[Phần 5: Triển khai Hooks](https://minhmannh2001.github.io/2025/06/11/build-your-own-x-orm-framework-in-go-part-5.html)**  
    Thêm khả năng chạy code tùy chỉnh trước/sau các thao tác cơ sở dữ liệu.
 
-6. **Ngày 6: Hỗ trợ transaction**  
-   Triển khai transaction cơ sở dữ liệu để đảm bảo tính toàn vẹn dữ liệu.
+6. **[Phần 6: Hỗ trợ transaction](https://minhmannh2001.github.io/2025/06/14/build-your-own-x-orm-framework-in-go-part-6.html)**  
+   Triển khai transaction để đảm bảo tính toàn vẹn dữ liệu.
 
-7. **Ngày 7: Migrate cơ sở dữ liệu**  
+7. **[Phần 7: Migrate cơ sở dữ liệu](https://minhmannh2001.github.io/2025/06/17/build-your-own-x-orm-framework-in-go-part-7.html)**  
    Tự động cập nhật schema cơ sở dữ liệu khi cấu trúc đối tượng thay đổi.
 
 ## 4. Kết luận
