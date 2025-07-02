@@ -1,0 +1,28 @@
+[
+  {
+    "name": "Build your own X: Web Framework in Go",
+    "posts": [
+      "/2025/04/25/build-your-own-x-web-framework-in-go",
+      "/2025/05/01/build-your-own-x-web-framework-in-go-part-2",
+      "/2025/05/09/build-your-own-x-web-framework-in-go-part-3",
+      "/2025/05/13/build-your-own-x-web-framework-in-go-part-4",
+      "/2025/05/19/build-your-own-x-web-framework-in-go-part-5",
+      "/2025/05/22/build-your-own-x-web-framework-in-go-part-6",
+      "/2025/05/23/build-your-own-x-web-framework-in-go-part-7",
+      "/2025/05/26/build-your-own-x-web-framework-in-go-part-8"
+    ]
+  },
+  {
+    "name": "Build your own X: ORM in Go",
+    "posts": [
+      "/2025/05/29/build-your-own-x-orm-framework-in-go-introduce",
+      "/2025/06/02/build-your-own-x-orm-framework-in-go-part-1",
+      "/2025/06/03/build-your-own-x-orm-framework-in-go-part-2",
+      "/2025/06/06/build-your-own-x-orm-framework-in-go-part-3",
+      "/2025/06/10/build-your-own-x-orm-framework-in-go-part-4",
+      "/2025/06/11/build-your-own-x-orm-framework-in-go-part-5",
+      "/2025/06/14/build-your-own-x-orm-framework-in-go-part-6",
+      "/2025/06/17/build-your-own-x-orm-framework-in-go-part-7"
+    ]
+  }
+]

@@ -1,0 +1,42 @@
+---
+layout: page
+title: Post Series
+---
+
+<style>
+  .series-title {
+    cursor: pointer;
+    font-weight: bold;
+  }
+  .series-posts {
+    display: none;
+    margin-left: 20px;
+  }
+</style>
+
+<div class="post-list">
+  {% for series in site.data.series %}
+    <div class="series">
+      <h2 class="series-title" onclick="toggleSeries(this)">{{ series.name }}</h2>
+      <ul class="series-posts">
+        {% for post_url in series.posts %}
+          {% assign found_post = site.posts | where:"url", post_url | first %}
+          {% if found_post %}
+            <li><a href="{{ site.baseurl }}{{ found_post.url }}">{{ found_post.title }}</a></li>
+          {% endif %}
+        {% endfor %}
+      </ul>
+    </div>
+  {% endfor %}
+</div>
+
+<script>
+  function toggleSeries(element) {
+    var posts = element.nextElementSibling;
+    if (posts.style.display === "block") {
+      posts.style.display = "none";
+    } else {
+      posts.style.display = "block";
+    }
+  }
+</script>
