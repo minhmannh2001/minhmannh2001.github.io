@@ -1,0 +1,25 @@
+---
+layout: page
+---
+
+<div class="series-detail">
+  <h1>{{ page.series.name }}</h1>
+  <p class="series-description">{{ page.series.description }}</p>
+
+  <hr>
+
+  <ul class="post-list">
+    {% for post_url in page.series.posts %}
+      {% assign found_post = site.posts | where:"url", post_url | first %}
+      {% if found_post %}
+        <li>
+          <h3>
+            <a class="post-link" href="{{ found_post.url | prepend: site.baseurl }}">{{ found_post.title }}</a>
+          </h3>
+          <span class="post-meta">{{ found_post.date | date: "%b %-d, %Y" }}</span>
+          <p>{{ found_post.excerpt | strip_html | truncatewords: 30 }}</p>
+        </li>
+      {% endif %}
+    {% endfor %}
+  </ul>
+</div>

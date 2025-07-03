@@ -778,3 +778,88 @@ td.gutter {
   color: #575651;
   text-align: justify;
 }
+
+/* --- Series Page --- */
+
+.series-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.series-card {
+  display: block;
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  padding: 20px;
+  text-decoration: none;
+  color: #404040;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.series-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.series-card-content .series-title {
+  margin-top: 0;
+  font-size: 24px;
+  color: #0085a1;
+}
+
+.series-card-content .series-description {
+  font-size: 16px;
+  margin-bottom: 15px;
+  color: #808080;
+}
+
+.series-card-content .series-post-count {
+  font-size: 14px;
+  font-weight: bold;
+  color: #0085a1;
+}
+
+/* --- Series Detail Page --- */
+
+.series-detail h1 {
+  font-size: 40px;
+  margin-bottom: 10px;
+}
+
+.series-detail .series-description {
+  font-size: 18px;
+  color: #808080;
+  margin-bottom: 30px;
+}
+
+.series-detail .post-list {
+  list-style: none;
+  padding-left: 0;
+}
+
+.series-detail .post-list li {
+  border-bottom: 1px solid #eee;
+  padding: 20px 0;
+}
+
+.series-detail .post-list li:last-child {
+  border-bottom: none;
+}
+
+.series-detail .post-list h3 {
+  margin-top: 0;
+  margin-bottom: 5px;
+}
+
+.series-detail .post-list .post-link {
+  font-size: 22px;
+}
+
+.series-detail .post-list .post-meta {
+  display: block;
+  font-size: 14px;
+  color: #808080;
+  margin-bottom: 10px;
+}

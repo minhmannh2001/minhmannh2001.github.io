@@ -1,6 +1,7 @@
 [
   {
     "name": "Build your own X: Web Framework in Go",
+    "description": "A step-by-step guide to building a web framework from scratch in Go, covering routing, middleware, and more.",
     "posts": [
       "/2025/04/25/build-your-own-x-web-framework-in-go",
       "/2025/05/01/build-your-own-x-web-framework-in-go-part-2",
@@ -14,6 +15,7 @@
   },
   {
     "name": "Build your own X: ORM in Go",
+    "description": "Learn how to create your own Object-Relational Mapping (ORM) framework in Go, from basic database interactions to schema migration.",
     "posts": [
       "/2025/05/29/build-your-own-x-orm-framework-in-go-introduce",
       "/2025/06/02/build-your-own-x-orm-framework-in-go-part-1",

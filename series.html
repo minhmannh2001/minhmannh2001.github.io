@@ -3,40 +3,14 @@ layout: page
 title: Post Series
 ---
 
-<style>
-  .series-title {
-    cursor: pointer;
-    font-weight: bold;
-  }
-  .series-posts {
-    display: none;
-    margin-left: 20px;
-  }
-</style>
-
-<div class="post-list">
+<div class="series-list">
   {% for series in site.data.series %}
-    <div class="series">
-      <h2 class="series-title" onclick="toggleSeries(this)">{{ series.name }}</h2>
-      <ul class="series-posts">
-        {% for post_url in series.posts %}
-          {% assign found_post = site.posts | where:"url", post_url | first %}
-          {% if found_post %}
-            <li><a href="{{ site.baseurl }}{{ found_post.url }}">{{ found_post.title }}</a></li>
-          {% endif %}
-        {% endfor %}
-      </ul>
-    </div>
+    <a href="{{ site.baseurl }}/series/{{ series.name | slugify }}.html" class="series-card">
+      <div class="series-card-content">
+        <h2 class="series-title">{{ series.name }}</h2>
+        <p class="series-description">{{ series.description }}</p>
+        <span class="series-post-count">{{ series.posts | size }} Posts</span>
+      </div>
+    </a>
   {% endfor %}
 </div>
-
-<script>
-  function toggleSeries(element) {
-    var posts = element.nextElementSibling;
-    if (posts.style.display === "block") {
-      posts.style.display = "none";
-    } else {
-      posts.style.display = "block";
-    }
-  }
-</script>
