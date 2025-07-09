@@ -1,7 +1,7 @@
 [
   {
-    "name": "Build your own X: Web Framework in Go",
-    "description": "A step-by-step guide to building a web framework from scratch in Go, covering routing, middleware, and more.",
+    "name": "Build your own X: Tự xây dựng một web framework với Go",
+    "description": "Hướng dẫn từng bước để tự xây dựng một web framework bằng ngôn ngữ Go – bao gồm các chủ đề như định tuyến (routing), middleware, xử lý HTTP request, và nhiều phần quan trọng khác.",
     "posts": [
       "/2025/04/25/build-your-own-x-web-framework-in-go",
       "/2025/05/01/build-your-own-x-web-framework-in-go-part-2",
@@ -14,8 +14,8 @@
     ]
   },
   {
-    "name": "Build your own X: ORM in Go",
-    "description": "Learn how to create your own Object-Relational Mapping (ORM) framework in Go, from basic database interactions to schema migration.",
+    "name": "Build your own X: Xây dựng ORM framework với Go",
+    "description": "Khám phá cách tự xây dựng một ORM (Object-Relational Mapping) framework với Go – từ những thao tác cơ bản với cơ sở dữ liệu đến thiết kế hệ thống migration.",
     "posts": [
       "/2025/05/29/build-your-own-x-orm-framework-in-go-introduce",
       "/2025/06/02/build-your-own-x-orm-framework-in-go-part-1",

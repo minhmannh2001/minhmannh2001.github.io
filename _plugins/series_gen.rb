@@ -1,3 +1,5 @@
+require 'jekyll/utils'
+
 module Jekyll
   class SeriesPageGenerator < Generator
     safe true
@@ -15,7 +17,7 @@ module Jekyll
       @site = site
       @base = base
       @dir = dir
-      @name = "#{series['name'].gsub(/\s+/, '-').downcase}.html"
+      @name = "#{Utils.slugify(series['name'])}.html"
 
       self.process(@name)
       self.read_yaml(File.join(base, '_layouts'), 'series_detail.html')
