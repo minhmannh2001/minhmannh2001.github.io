@@ -35,7 +35,7 @@ Lý do rất đơn giản: bạn sẽ phát triển một server xử lý các t
 
 Hiểu và nắm vững linearizability là bước nền quan trọng. Không chỉ để vượt qua các test của bài lab - nơi mô phỏng đầy đủ các tình huống thực tế như retry, race condition hay lỗi mạng - mà còn để hình thành tư duy xây dựng hệ thống phân tán đáng tin cậy trong thực tế.
 
-### Tình huống giả định
+### 1. Tình huống giả định
 
 Giả sử Bob đang mở ứng dụng ngân hàng trên điện thoại để kiểm tra số dư tài khoản, trong khi Alice, người thân của anh, đang rút tiền từ cây ATM cách đó vài cây số. Câu hỏi đặt ra là: Bob sẽ nhìn thấy gì trên màn hình? Số dư đã được cập nhật theo giao dịch của Alice chưa?
 
@@ -52,7 +52,7 @@ Một hệ quả quan trọng của mô hình linearizability là: các thao tá
 
 Để hiểu rõ hơn cách linearizability trả lời cho tình huống Bob kiểm tra số dư trong khi Alice đang rút tiền, hãy xem xét hai kịch bản dưới đây:
 
-### Phân tích tình huống
+### 2. Phân tích tình huống
 Để hiểu rõ hơn cách linearizability trả lời cho tình huống Bob kiểm tra số dư trong khi Alice đang rút tiền, hãy xem xét hai kịch bản dưới đây:
 #### Kịch bản 1: Các thao tác diễn ra không đồng thời
 Giả sử Alice thực hiện thao tác rút 100 đô la khỏi tài khoản của mình khi số dư ban đầu là 600 đô. Giao dịch của cô hoàn tất trước khi Bob mở ứng dụng ngân hàng để kiểm tra số dư. Cụ thể:
@@ -136,11 +136,17 @@ Hệ thống RPC sử dụng một vài mã lỗi sau để biểu diễn trạn
 
 ### 4. Triển khai
 
-#### 4.1. Xây dựng khung xương của Server
-Trước tiên, chúng ta cần định nghĩa trạng thái mà server phải duy trì. Server cần một map lưu trữ dữ liệu trong bộ nhớ và một mutex để đảm bảo an toàn khi truy cập đồng thời.
+#### 4.1. Thiết kế cấu trúc dữ liệu cho Server
+
+K/V server sử dụng một `map` trong bộ nhớ để lưu các cặp key-value. Vì server có thể xử lý nhiều yêu cầu cùng lúc, nên cần thêm một `sync.Mutex` để đảm bảo việc truy cập dữ liệu được an toàn, tránh xung đột.
+
+Mỗi key trong hệ thống không chỉ lưu giá trị (`value`) đơn thuần, mà còn kèm theo một trường `version`. Trường này ghi lại số lần giá trị của key đó đã được ghi đè, giúp hệ thống dễ dàng kiểm soát các thao tác cập nhật có điều kiện (ví dụ, chỉ thực hiện ghi nếu `version` hiện tại trùng khớp với `version` được gửi trong request. Nếu không khớp, thao tác sẽ bị từ chối để tránh ghi đè dữ liệu không mong muốn).  
+Để biểu diễn dữ liệu này, ta sử dụng một cấu trúc `ValueHandle`, chứa cả `Value` và `Version`.
+
+Dưới đây là phần mã khởi tạo server trong file `src/kvsrv1/server.go`.
+
 
 __`src/kvsrv1/server.go`__
-
 ```go
 package kvsrv
 
@@ -165,95 +171,84 @@ func MakeKVServer() *KVServer {
 	kv.data = make(map[string]ValueHandle)
 	return kv
 }
-
-// Trình xử lý RPC Get
-func (kv *KVServer) Get(args *rpc.GetArgs, reply *rpc.GetReply) {
-	kv.mu.Lock()
-	defer kv.mu.Unlock()
-
-	if value, ok := kv.data[args.Key]; ok {
-		reply.Value = value.Value
-		reply.Version = value.Version
-		reply.Err = rpc.OK
-	} else {
-		reply.Err = rpc.ErrNoKey
-	}
-}
-
-// Trình xử lý RPC Put
-func (kv *KVServer) Put(args *rpc.PutArgs, reply *rpc.PutReply) {
-	kv.mu.Lock()
-	defer kv.mu.Unlock()
-
-	key := args.Key
-	current, exists := kv.data[key]
-
-	if exists {
-		// Key đã tồn tại. Put chỉ hợp lệ nếu phiên bản của client khớp.
-		if args.Version != current.Version {
-			reply.Err = rpc.ErrVersion
-			return
-		}
-		// Phiên bản khớp. Cập nhật giá trị và tăng phiên bản.
-		kv.data[key] = ValueHandle{Value: args.Value, Version: args.Version + 1}
-	} else {
-		// Key không tồn tại. Nó chỉ có thể được tạo nếu client gửi phiên bản 0.
-		if args.Version != 0 {
-			reply.Err = rpc.ErrNoKey
-			return
-		}
-		// Tạo key mới. Phiên bản đầu tiên của nó là 1.
-		kv.data[key] = ValueHandle{Value: args.Value, Version: 1}
-	}
-	reply.Err = rpc.OK
-}
 ```
-#### 4.2. Cài đặt thao tác Get
 
-Thao tác Get tương đối đơn giản vì chỉ là thao tác đọc. Do đó, việc hiện thực ở cả phía client và server khá dễ dàng.
+#### 4.2. Triển khai thao tác Get
 
-##### Hàm xử lý Get ở phía Server
-Hàm xử lý Get trên server cần khóa mutex, tra cứu khóa trong map, và trả về giá trị cùng phiên bản nếu tìm thấy. Nếu không, nó trả về lỗi ErrNoKey.
+##### Phía Server: Xử lý yêu cầu Get một cách an toàn
+
+
+Hàm xử lý Get trên server chịu trách nhiệm truy xuất dữ liệu. Đây là một thao tác chỉ đọc (read-only), không làm thay đổi trạng thái của server, nên logic của nó khá đơn giản. Tuy nhiên, điểm mấu chốt là phải đảm bảo an toàn trong môi trường đa luồng. Bằng cách khóa mutex (kv.mu.Lock()) ngay khi bắt đầu và sử dụng defer kv.mu.Unlock() để đảm bảo nó luôn được giải phóng, chúng ta ngăn chặn được tình trạng đọc phải dữ liệu cũ hoặc không nhất quán (stale or inconsistent reads) trong khi một thao tác Put đang diễn ra.
 
 ```go
 func (kv *KVServer) Get(args *rpc.GetArgs, reply *rpc.GetReply) {
+	// Khóa để bảo vệ quyền truy cập vào `kv.data` từ các yêu cầu đồng thời.
 	kv.mu.Lock()
 	defer kv.mu.Unlock()
 
+	// Tra cứu key trong map.
 	if value, ok := kv.data[args.Key]; ok {
+		// Nếu tìm thấy, trả về giá trị và phiên bản hiện tại.
 		reply.Value = value.Value
 		reply.Version = value.Version
 		reply.Err = rpc.OK
 	} else {
+		// Nếu không tìm thấy, trả về lỗi.
 		reply.Err = rpc.ErrNoKey
 	}
 }
 ```
+##### Phía Client: Gọi và xử lý Get với cơ chế retry
 
-##### Phương thức Get phía Client
-Phía client cần xử lý các lỗi mạng. Vì Get là thao tác idempotent (lặp lại nhiều lần không thay đổi kết quả), client có thể gửi lại RPC nhiều lần cho đến khi nhận được phản hồi thành công.
+Phía client, việc gọi `Get` phải tính đến khả năng mạng không ổn định. May mắn là `Get` là một thao tác __idempotent__ (an toàn để lặp lại), nghĩa là việc gửi lại yêu cầu nhiều lần không gây ra tác dụng phụ hay làm thay đổi trạng thái của server.
+
+Dựa vào tính chất này, client có thể triển khai một vòng lặp `for` đơn giản để đảm bảo độ tin cậy:
+
+1. Liên tục gửi yêu cầu RPC `KVServer.Get`.
+2. Nếu nhận được phản hồi (`ok` là `true`), vòng lặp kết thúc và trả về kết quả.
+3. Nếu yêu cầu thất bại do lỗi mạng (`ok` là `false`), client sẽ đợi một khoảng thời gian ngắn rồi tự động thử lại.
+
+Cách tiếp cận này giúp `Get` hoạt động ổn định ngay cả khi có sự cố mất gói tin trên đường truyền.
+
+
 ```go
 func (ck *Clerk) Get(key string) (string, rpc.Tversion, rpc.Err) {
 	args := rpc.GetArgs{Key: key}
 	reply := rpc.GetReply{}
+	// Bắt đầu một vòng lặp vô hạn để thử lại cho đến khi thành công.
 	for {
+		// Thực hiện cuộc gọi RPC đến phương thức "KVServer.Get".
 		ok := ck.clnt.Call(ck.server, "KVServer.Get", &args, &reply)
 		if ok {
+			// Nếu cuộc gọi thành công (nhận được phản hồi),
+			// trả về kết quả ngay lập tức.
 			return reply.Value, reply.Version, reply.Err
 		}
-		// Gặp lỗi mạng, đợi một chút rồi thử lại.
+		// Nếu cuộc gọi thất bại (lỗi mạng), đợi một chút rồi lặp lại.
+		// Đây là cơ chế retry đơn giản.
 		time.Sleep(100 * time.Millisecond)
 	}
 }
 ```
 
-#### 4.3. Cài đặt Put có điều kiện (At-Most-Once)
+#### 4.3. Triển khai Put có điều kiện để đảm bảo At-Most-Once
 
-Đây là phần phức tạp nhất của dịch vụ KV. Vì Put là thao tác không idempotent, ta phải cẩn thận để đảm bảo nó chỉ thực thi duy nhất một lần.
+Đây là phần thử thách nhưng cũng thú vị nhất của bài lab. Khác với `Get`, thao tác `Put` có thể __thay đổi trạng thái__ của server (cập nhật giá trị và tăng phiên bản). Điều này khiến nó trở thành một thao tác __không idempotent__: nếu thực hiện nhiều lần, kết quả có thể khác so với chỉ thực hiện một lần, dẫn đến nguy cơ sai lệch hoặc mất dữ liệu.
 
-##### Hàm xử lý Put phía Server
-Hàm xử lý Put sẽ sử dụng phiên bản mà client gửi lên để quyết định có chấp nhận cập nhật hay không.
+Thử thách đặt ra là: làm sao để client có thể gửi lại yêu cầu `Put` khi gặp lỗi mạng, mà vẫn đảm bảo rằng thao tác đó chỉ được thực thi **tối đa một lần (at-most-once)** trên server?
+
+Giải pháp nằm ở việc thiết kế hợp lý giữa logic xử lý ở client và server, trong đó cơ chế kiểm tra phiên bản (version checking) đóng vai trò then chốt.
+
+##### a) Phía Server: Logic Put có điều kiện
+
+Cốt lõi của cơ chế **at-most-once** nằm trong hàm xử lý `Put` ở phía server. Tại đây, server sử dụng `args.Version` do client gửi lên như một “vé kiểm soát” để quyết định có chấp nhận yêu cầu cập nhật hay không. Logic xử lý xoay quanh hai tình huống chính:
+
+- **Cập nhật một key đã tồn tại**:  Server chỉ cho phép cập nhật nếu phiên bản từ client (`args.Version`) **khớp chính xác** với phiên bản hiện tại của key. Khi điều kiện này thỏa mãn, server sẽ ghi đè với giá trị mới và **tăng phiên bản lên 1**. Việc tăng phiên bản ngay lập tức khiến các yêu cầu `Put` cũ hơn (ví dụ bị gửi lại sau do lỗi mạng) trở nên vô hiệu, vì phiên bản không còn khớp. Nếu phiên bản không khớp, server trả về lỗi `ErrVersion`.
+- **Tạo một key mới**: Theo quy ước, việc tạo mới chỉ hợp lệ nếu `args.Version == 0`. Đây là tín hiệu cho biết client muốn khởi tạo chứ không phải cập nhật. Trong trường hợp này, server tạo key mới với giá trị được cung cấp và gán phiên bản bắt đầu là `1`. Nếu `args.Version` khác `0`, server từ chối với lỗi `ErrNoKey` (vì client đang cố cập nhật một key không tồn tại với một phiên bản không hợp lệ).
+
 ```go
+// Put là trình xử lý RPC, thực hiện cập nhật giá trị cho một key có điều kiện.
+// Thao tác chỉ thành công nếu phiên bản từ client khớp với phiên bản hiện tại trên server.
 func (kv *KVServer) Put(args *rpc.PutArgs, reply *rpc.PutReply) {
 	kv.mu.Lock()
 	defer kv.mu.Unlock()
@@ -262,99 +257,162 @@ func (kv *KVServer) Put(args *rpc.PutArgs, reply *rpc.PutReply) {
 	current, exists := kv.data[key]
 
 	if exists {
-		// Nếu khóa đã tồn tại, chỉ chấp nhận nếu version khớp.
+		// Trường hợp 1: Key đã tồn tại.
 		if args.Version != current.Version {
+			// Phiên bản của client đã cũ, từ chối yêu cầu và trả về lỗi.
 			reply.Err = rpc.ErrVersion
 			return
 		}
-		// Cập nhật giá trị và tăng version.
+		// Phiên bản khớp, thực hiện cập nhật và tăng phiên bản.
 		kv.data[key] = ValueHandle{Value: args.Value, Version: args.Version + 1}
 	} else {
-		// Nếu chưa có key, chỉ cho phép tạo mới nếu version = 0.
+		// Trường hợp 2: Key chưa tồn tại.
+		// Key mới chỉ có thể được tạo nếu client gửi phiên bản 0.
 		if args.Version != 0 {
+			// Client đang cố cập nhật một key không tồn tại với phiên bản khác 0 -> không hợp lệ.
 			reply.Err = rpc.ErrNoKey
 			return
 		}
-		// Tạo mới key với version đầu tiên là 1.
+		// Tạo key mới với phiên bản đầu tiên là 1.
 		kv.data[key] = ValueHandle{Value: args.Value, Version: 1}
 	}
+
+	// Nếu không có lỗi nào xảy ra, trả về OK.
 	reply.Err = rpc.OK
 }
 ```
-Logic kiểm tra version này chính là yếu tố giúp client có thể gửi lại một cách an toàn.
-##### Phương thức Put phía Client
-Phía client, phương thức Put cần thực hiện xử lý đặc biệt để trả về ErrMaybe trong các trường hợp không chắc chắn, như yêu cầu được gửi lại nhưng không biết có thành công hay chưa.
+##### b) Phía Client: Xử lý sự không chắc chắn với `ErrMaybe`
+
+Khác với `Get`, thao tác `Put` có thể thay đổi dữ liệu trên server, nên client **không thể đơn giản gửi lại yêu cầu** nếu gặp lỗi mạng. Việc gửi lại có thể dẫn đến những tình huống khó xử, đặc biệt là khi client **không biết chắc yêu cầu ban đầu đã được xử lý hay chưa**.
+
+**Tình huống tiến thoái lưỡng nan**
+Giả sử xảy ra kịch bản sau:
+
+1. Client gửi yêu cầu `Put` đến server.
+2. Server nhận được và xử lý thành công — giá trị được cập nhật, `version` được tăng lên — nhưng phản hồi `OK` bị mất trên đường truyền.
+3. Không nhận được phản hồi, client nghĩ rằng yêu cầu đã thất bại nên gửi lại với nội dung y hệt (cùng `args.Version`).
+4. Lúc này, server đã tăng `version` sau lần xử lý trước, nên khi nhận lại yêu cầu cũ, nó phát hiện `version` không khớp và trả về lỗi `ErrVersion`.
+
+Khi nhận được lỗi `ErrVersion` trong lần gửi lại, client rơi vào thế khó xử — vì không thể biết chuyện gì thực sự đã xảy ra:
+
+- **Trường hợp 1 (Yêu cầu đã thành công):** Yêu cầu ban đầu đã được server xử lý, chỉ có điều phản hồi bị mất.
+- **Trường hợp 2 (Yêu cầu thất bại):** Yêu cầu chưa đến được server, hoặc một client khác đã cập nhật key đó trước.
+
+Trong tình huống mơ hồ này, client **không thể tự quyết định** là có nên thử lại hay không. Cách xử lý tốt nhất là thông báo lên tầng ứng dụng rằng: “Tôi **không chắc** yêu cầu có được xử lý hay không.”  
+Đó chính là ý nghĩa của mã lỗi `rpc.ErrMaybe`.
+
+Khi gặp lỗi mạng và sau đó nhận lại lỗi `ErrVersion` cho một yêu cầu đã từng gửi, client cần trả về `ErrMaybe` để báo cho ứng dụng biết rằng trạng thái có thể đã thay đổi, và tầng ứng dụng nên tự xử lý tiếp.
 
 ```go
 func (ck *Clerk) Put(key, value string, version rpc.Tversion) rpc.Err {
 	args := rpc.PutArgs{Key: key, Value: value, Version: version}
 	reply := rpc.PutReply{}
+	// Sử dụng một biến đếm để theo dõi số lần gửi lại.
 	retries := 0
 	for {
 		ok := ck.clnt.Call(ck.server, "KVServer.Put", &args, &reply)
 		if ok {
-			// Nhận được phản hồi.
+			// Đã nhận được phản hồi từ server.
 
-			// Nếu đây là lần gửi lại (retry) và server trả về ErrVersion,
-			// ta không thể biết yêu cầu gốc có được thực hiện hay chưa.
+			// Đây là logic quan trọng nhất:
+			// Nếu đây là một lần gửi lại (retries > 0) VÀ server trả về ErrVersion,
+			// chúng ta rơi vào kịch bản không chắc chắn.
 			if retries > 0 && reply.Err == rpc.ErrVersion {
 				return rpc.ErrMaybe
 			}
 
-			// Trường hợp còn lại, phản hồi của server là rõ ràng.
+			// Trong mọi trường hợp khác, phản hồi của server là rõ ràng và đáng tin cậy
+			// (ví dụ: OK, hoặc ErrVersion trong lần gửi đầu tiên).
 			return reply.Err
 		}
-		// Không nhận được phản hồi (lỗi mạng), tăng retry và chờ.
+		// Không nhận được phản hồi (lỗi mạng), tăng biến đếm và thử lại.
 		retries++
 		time.Sleep(100 * time.Millisecond)
 	}
 }
 ```
 
-Với các thành phần trên, hệ thống KV đơn giản của chúng ta đã hoàn chỉnh. sync.Mutex đảm bảo tính đồng bộ trên server, còn cơ chế kiểm tra phiên bản giữa client và server giúp tăng độ bền vững trong môi trường có lỗi mạng.
+Với sự kết hợp giữa `sync.Mutex` ở server và chế kiểm tra phiên bản (version checking), hệ thống K/V của chúng ta đã hoàn thiện. Nó không chỉ đảm bảo an toàn truy cập đồng thời mà còn cung cấp ngữ nghĩa at-most-once mạnh mẽ, giúp hệ thống hoạt động đáng tin cậy ngay cả khi đối mặt với lỗi mạng.
 
-Với nền tảng này, chúng ta đã sẵn sàng để giải quyết phần thứ hai của bài lab.
+Nền tảng vững chắc này đã sẵn sàng để chúng ta xây dựng các ứng dụng phức tạp hơn ở phần tiếp theo.
 
-## Phần 2: Xây dựng một khóa phân tán
+## Phần 2: Xây dựng Khóa Phân tán (Distributed Lock)
 
-Bây giờ, chúng ta sẽ sử dụng dịch vụ KV mạnh mẽ của mình như một khối xây dựng cho một nguyên thủy đồng bộ hóa cấp cao hơn: một khóa phân tán. Mục tiêu là triển khai các phương thức `Acquire` và `Release` hoạt động đúng ngay cả khi nhiều client đang cạnh tranh để giành khóa qua một mạng không đáng tin cậy.
+Giờ đây, khi đã xây dựng xong một K/V store với tính chất **at-most-once** đáng tin cậy, chúng ta có thể sử dụng nó làm nền để triển khai một tính năng cao cấp hơn và cực kỳ quan trọng trong các hệ thống phân tán: **khóa phân tán (distributed lock)**.
 
-### Giải thích bộ kiểm thử cho Khóa (`lock/lock_test.go`)
+Mục tiêu của phần này là xây dựng một client có thể thực hiện hai thao tác:
 
-Các bài kiểm thử cho khóa được thiết kế để xác minh một thuộc tính chính: __loại trừ tương hỗ (mutual exclusion)__. Chỉ một client được giữ khóa tại một thời điểm.
+- `Acquire`: giành quyền sở hữu khóa.
+- `Release`: nhả khóa ra khi không còn sử dụng.
 
-#### Thiết lập kiểm thử thông minh: Khóa và "Honeypot"
+Hệ thống cần đảm bảo các thao tác này diễn ra chính xác, ngay cả khi có nhiều client cùng tranh giành khóa, và đặc biệt phải **chịu lỗi tốt** trong môi trường mạng không ổn định — một đặc điểm phổ biến của các hệ thống phân tán thực tế.
 
-Bộ kiểm thử sử dụng một mẹo thông minh với hai key trong kho KV của chúng ta:
+### 1. Yêu cầu chức năng
 
-1.  **Key của Khóa (`"l"`)**: Giá trị của key này đại diện cho trạng thái của chính khóa.
-2.  **Key Tài nguyên Chia sẻ (`"l0"`)**: Key này hoạt động như một "honeypot" (mồi nhử), mô phỏng một tài nguyên được khóa bảo vệ.
+Để đảm bảo hoạt động an toàn trong môi trường phân tán, một cơ chế khóa phân tán cần thỏa mãn các tiêu chí sau:
 
-Logic kiểm thử rất đơn giản: mỗi client sẽ cố gắng chiếm khóa trên `"l"`, sửa đổi tài nguyên tại `"l0"`, sau đó giải phóng khóa trên `"l"`.
+#### 1.1. Loại trừ tương hỗ (Mutual Exclusion)
+Chỉ một client duy nhất được giữ khóa tại một thời điểm. Điều này giúp ngăn chặn tình trạng nhiều client truy cập đồng thời vào cùng một tài nguyên, từ đó tránh xung đột và lỗi dữ liệu (race condition).
 
-#### Khẳng định trong Vùng tranh chấp
+#### 1.2. API rõ ràng: `Acquire` và `Release`
+- `Acquire()`: Được gọi khi client muốn giữ khóa. Nếu khóa đang trống, client sẽ lấy được ngay. Nếu đã có client khác giữ khóa, lệnh này sẽ chờ (block) cho đến khi khóa được nhả ra.
+- `Release()`: Được gọi để nhả khóa mà client đang giữ, tạo cơ hội cho client khác tiếp quản.
 
-Hàm `oneClient` trong file kiểm thử định nghĩa hành vi này. Điểm cốt lõi là khi một client chiếm được khóa và đi vào vùng tranh chấp, nó sẽ kiểm tra tài nguyên `"l0"`. **Nếu giá trị của `"l0"` không rỗng, điều đó có nghĩa là một client khác cũng đang ở trong vùng tranh chấp của nó**—một sự thất bại nghiêm trọng của việc loại trừ tương hỗ, và bài kiểm thử sẽ panic ngay lập tức.
+#### 1.3. Chống chịu lỗi (Fault Tolerance)
+Cơ chế khóa phải hoạt động đúng ngay cả khi mạng không ổn định — nơi các gói tin RPC có thể bị mất hoặc trễ. Do đó, cả `Acquire` và `Release` cần được thiết kế để xử lý việc gửi lại (retry) mà không làm hỏng trạng thái khóa.
 
-#### Bốn kịch bản kiểm thử
+#### 1.4. Không xảy ra deadlock (Deadlock Freedom)
+Hệ thống phải đảm bảo rằng nếu client giữ khóa cuối cùng cũng nhả nó ra, thì các client khác sẽ **cuối cùng** giành được quyền truy cập. Không để tình trạng “chờ mãi không đến lượt” xảy ra.
 
-Logic `oneClient` này được chạy trong bốn điều kiện khác nhau để kiểm tra:
+### 2. Phân tích các kịch bản kiểm thử
 
--   **`TestManyClientsReliable`**: Kiểm tra tính đồng thời và nguyên tử khi nhiều client tranh giành khóa trên một mạng hoàn hảo.
--   **`TestOneClientUnreliable`**: Kiểm tra khả năng chịu lỗi, đảm bảo các phương thức `Acquire`/`Release` là idempotent (an toàn để thử lại) khi RPC bị mất.
--   **`TestManyClientsUnreliable`**: Thách thức cuối cùng, kết hợp cả tính đồng thời và lỗi mạng để đảm bảo triển khai của chúng ta mạnh mẽ trong điều kiện khó khăn nhất.
+Để đảm bảo khóa phân tán của chúng ta hoạt động đúng đắn trong mọi tình huống, bộ kiểm thử được chia thành các kịch bản sau, mỗi kịch bản tập trung vào một khía cạnh khác nhau:
 
-### Triển khai Khóa từng bước
+- **`TestOneClientReliable` (Kiểm tra cơ bản trên mạng ổn định)**:
+	- **Mục tiêu**: Đây là bài kiểm tra "sanity check" đơn giản nhất, xác minh rằng một client duy nhất có thể `Acquire` và `Release` khóa một cách chính xác trong điều kiện mạng lý tưởng.
+	- **Kịch bản**: Một client gọi `Acquire()`, sau đó gọi `Release()`. Bài test đảm bảo các thao tác cơ bản hoạt động như mong đợi.
 
-Chiến lược của chúng ta sẽ là triển khai một __spinlock test-and-set__.
+- __`TestManyClientsReliable` (Kiểm tra tranh chấp trên mạng ổn định)__:
 
--   __Trạng thái của Khóa__: Một key trong kho KV đại diện cho khóa. Một giá trị rỗng (`""`) có nghĩa là "rảnh". Một giá trị không rỗng có nghĩa là "đang được giữ" bởi client có ID duy nhất là giá trị đó.
--   __Acquire__: Một client phải thay đổi giá trị một cách nguyên tử từ `""` thành ID duy nhất của chính nó. `Put` có phiên bản của chúng ta là hoàn hảo cho việc này.
--   __Release__: Một client phải đặt lại giá trị thành `""`.
+  - __Mục tiêu__: Xác minh tính đúng đắn của cơ chế loại trừ tương hỗ (mutual exclusion) khi có nhiều client cùng tranh giành khóa.
+  - __Kịch bản__: Nhiều client đồng thời gọi `Acquire()`. Bài test sẽ thất bại nếu có nhiều hơn một client vào được vùng tranh chấp (critical section) tại cùng một thời điểm.
 
-#### Bước 2.1: `MakeLock` - Chuẩn bị
+- __`TestOneClientUnreliable` (Kiểm tra khả năng chịu lỗi của một client)__:
 
-Đầu tiên, hãy triển khai `MakeLock`. Mỗi instance của khóa cần một ID duy nhất để phân biệt với các client khác. Bài lab cho chúng ta biết phải sử dụng `kvtest.RandValue(8)`. Chúng ta cũng cần đảm bảo key của khóa tồn tại trong kho KV, khởi tạo nó thành `""` (rảnh).
+  - __Mục tiêu__: Đảm bảo các thao tác `Acquire` và `Release` có khả năng phục hồi sau lỗi mạng.
+  - __Kịch bản__: Một client duy nhất thực hiện `Acquire` và `Release` trên một mạng không ổn định, nơi các gói tin RPC có thể bị mất. Bài test kiểm tra xem client có thể xử lý việc gửi lại (retry) một cách an toàn hay không.
+
+- __`TestManyClientsUnreliable` (Tranh chấp trên mạng không ổn định)__:
+
+  - __Mục-tiêu__: Đây là bài kiểm tra khó nhất, kết hợp cả hai thử thách: tranh chấp đồng thời và lỗi mạng.
+  - __Kịch bản__: Nhiều client cùng tranh giành khóa trên một mạng không ổn định. Bài test này đảm bảo rằng việc triển khai của chúng ta đủ mạnh mẽ để duy trì tính đúng đắn trong những điều kiện khó khăn nhất.
+
+
+### 3. Cách triển khai Distributed Lock: Dựa trên "test-and-set" spinlock
+Chúng ta sẽ xây dựng cơ chế khóa phân tán  bằng một chiến lược kinh điển và hiệu quả: "test-and-set" spinlock. Ý tưởng cốt lõi là client sẽ liên tục kiểm tra (test) trạng thái của khóa và cố gắng chiếm lấy nó (set) cho đến khi thành công.
+
+**Quy ước trạng thái khóa trên K/V Store:**
+Để biểu diễn trạng thái của khóa, chúng ta sẽ sử dụng một key duy nhất trong K/V store:
+- __Khóa rảnh (Unlocked)__: Giá trị của key là một chuỗi rỗng (`""`).
+- __Khóa đã bị chiếm (Locked)__: Giá trị của key là một ID định danh duy nhất của client đang giữ khóa.
+
+**Cách hoạt động của các thao tác**
+- **`Acquire`**: Khi muốn giành khóa, client sẽ gửi một yêu cầu `Put` có điều kiện — chỉ thực hiện nếu giá trị hiện tại của key là `""`. Nếu điều kiện đúng, server sẽ cập nhật giá trị thành ID của client. Nếu không, client sẽ phải thử lại sau.
+- **`Release`**: Khi không còn cần giữ khóa, client sẽ gửi một lệnh `Put` khác để đặt giá trị của key trở lại `""`, trả khóa về trạng thái rảnh cho client khác sử dụng.
+
+#### 3.1. `MakeLock` - Khởi tạo Client Lock Handle
+
+Hàm `MakeLock` không trực tiếp tạo khóa trên server, mà tạo ra một **handle phía client** — một đối tượng đại diện cho khóa, cho phép client tương tác với nó (giành và nhả khóa).
+
+Mỗi handle bao gồm:
+
+1. **`clerk`** – đối tượng dùng để gửi yêu cầu RPC đến K/V server.
+2. **`key`** – tên của khóa, được lưu dưới dạng một key trong K/V store.
+3. **`value` (ID định danh)** – một chuỗi ngẫu nhiên, duy nhất cho mỗi client. Đây là cách để xác định client nào đang giữ khóa. ID này rất quan trọng cho việc xác thực trong thao tác `Release`.
+
+Khi được gọi, `MakeLock` sẽ cố gắng **khởi tạo khóa trên server** bằng cách đặt giá trị của key thành chuỗi rỗng (`""`) — thể hiện trạng thái “chưa bị chiếm”. Việc này được thực hiện thông qua một thao tác `Put` có điều kiện với `version = 0`. Nghĩa là thao tác chỉ thành công nếu key chưa tồn tại.
+
+Nếu key đã được khởi tạo trước bởi một client khác (tức là server trả về lỗi `ErrVersion`), thì không sao — điều đó có nghĩa là khóa đã tồn tại, và handle vẫn có thể sử dụng bình thường.
 
 __`src/kvsrv1/lock/lock.go`__
 
@@ -369,66 +427,106 @@ import (
 
 type Lock struct {
 	ck    kvtest.IKVClerk
-	key   string // Key trong kho k/v đại diện cho khóa
-	value string // ID duy nhất cho người giữ khóa này
+	key   string // Key trong kho k/v đại diện cho khóa.
+	value string // ID duy nhất của client này, dùng để "ký tên" khi giữ khóa.
 }
 
+// MakeLock tạo một "tay cầm" (handle) cho khóa mới ở phía client.
+// Nó cũng đảm bảo rằng key của khóa đã được khởi tạo trên K/V store.
 func MakeLock(ck kvtest.IKVClerk, l string) *Lock {
 	lk := &Lock{
 		ck:    ck,
 		key:   l,
-		value: kvtest.RandValue(8), // Một ID duy nhất cho client này
+		value: kvtest.RandValue(8), // Một ID duy nhất cho "tay cầm" khóa của client này.
 	}
-	// Khởi tạo key của khóa thành "" (rảnh) nếu nó chưa tồn tại.
-	// Chúng ta sử dụng phiên bản 0, chỉ thành công nếu key là mới.
-	// Không sao nếu thao tác này thất bại với ErrVersion; điều đó chỉ có nghĩa là
-	// một client khác đã khởi tạo nó trước.
-	lk.ck.Put(l, "", 0)
+
+	// Cố gắng khởi tạo key của khóa trên store.
+	// Vòng lặp này đảm bảo thao tác có thể vượt qua các lỗi mạng tạm thời.
+	for {
+		// Đầu tiên, kiểm tra xem key đã tồn tại chưa.
+		_, _, err := ck.Get(l)
+		if err == rpc.ErrNoKey {
+			// Key chưa tồn tại, thử tạo nó với trạng thái "rảnh" (giá trị rỗng, phiên bản 0).
+			err = ck.Put(l, "", 0)
+			if err == rpc.OK || err == rpc.ErrVersion {
+				// Nếu thành công (OK), hoặc nếu một client khác đã tạo nó ngay trước chúng ta (ErrVersion),
+				// thì mục tiêu đã đạt được.
+				break
+			}
+		} else if err == rpc.OK {
+			// Key đã tồn tại, không cần làm gì thêm.
+			break
+		}
+		// Nếu gặp ErrMaybe hoặc các lỗi mạng khác, đợi một chút rồi thử lại.
+		time.Sleep(10 * time.Millisecond)
+	}
+
 	return lk
 }
 ```
 
-#### Bước 2.2: `Acquire` - Logic Spinlock
+#### 3.2. Hàm `Acquire`: Giành lấy khóa theo cơ chế "test-and-set"
 
-Bây giờ là logic `Acquire` cốt lõi. Đây phải là một vòng lặp tiếp tục cho đến khi nó chiếm được khóa thành công.
+Hàm `Acquire` triển khai cơ chế **spinlock**, nơi client sẽ lặp lại việc kiểm tra và cố gắng chiếm khóa cho đến khi thành công. Đây là một hàm **blocking** - chỉ trả về khi client chắc chắn đã nắm giữ khóa.
+
+Trong mỗi vòng lặp `for`, client thực hiện hai bước chính:
+
+1. **Kiểm tra (Test)**: Gọi `Get` để lấy giá trị hiện tại và phiên bản của key đại diện cho khóa.
+2. **Thiết lập (Set)**: Tùy vào trạng thái đọc được, quyết định có nên cố gắng chiếm khóa không.
+
+Có hai tình huống chính:
+
+- **Khóa đang rảnh (`state == ""`)**: Đây là thời điểm để giành quyền sở hữu. Client sẽ dùng `Put` có điều kiện để thay giá trị từ `""` thành `lk.value`. Nếu phiên bản không bị thay đổi kể từ lần `Get` trước, thao tác sẽ thành công và client đã giữ được khóa. Nếu thất bại (do race với client khác), vòng lặp sẽ tiếp tục thử lại.
+
+- **Client đã giữ khóa (`state == lk.value`)**: Trường hợp này xảy ra nếu lần gọi `Acquire` trước đã thành công nhưng phản hồi bị mất (ví dụ: do lỗi mạng). Vì vậy, client có thể yên tâm kết luận rằng mình vẫn đang giữ khóa và trả về thành công. Đây là cách đảm bảo tính **idempotent** cho `Acquire`.
 
 __`src/kvsrv1/lock/lock.go`__
 
 ```go
+// Acquire giành lấy khóa.
+// Hàm này sẽ block cho đến khi khóa được giành thành công.
 func (lk *Lock) Acquire() {
+	// Vòng lặp vô hạn để thử lại cho đến khi thành công (spinlock).
 	for {
-		// Test: Đọc trạng thái hiện tại của khóa.
+		// --- Giai đoạn Test: Đọc trạng thái hiện tại của khóa ---
 		state, version, err := lk.ck.Get(lk.key)
 
-		// Trường hợp 1: Khóa đang rảnh.
-		if err == rpc.OK && state == "" {
-			// Set: Cố gắng chiếm khóa một cách nguyên tử bằng cách đặt giá trị duy nhất của chúng ta.
-			// Thao tác này chỉ thành công nếu phiên bản không thay đổi kể từ lần Get của chúng ta.
-			putErr := lk.ck.Put(lk.key, lk.value, version)
-			if putErr == rpc.OK {
-				return // Thành công! Chúng ta đã chiếm được khóa.
+		if err == rpc.OK {
+			if state == "" {
+				// --- Giai đoạn Set: Khóa đang rảnh, cố gắng chiếm lấy ---
+				// Thao tác Put có điều kiện này là nguyên tử.
+				putErr := lk.ck.Put(lk.key, lk.value, version)
+				if putErr == rpc.OK {
+					// Thành công! Chúng ta đã giành được khóa.
+					return
+				}
+				// Nếu putErr là ErrVersion, có nghĩa là một client khác đã thắng cuộc đua.
+				// Nếu là ErrMaybe, chúng ta không chắc chắn, nhưng vòng lặp tiếp theo sẽ làm rõ.
+				// Trong cả hai trường hợp, chúng ta chỉ cần lặp lại.
+
+			} else if state == lk.value {
+				// Chúng ta đã là người giữ khóa. Điều này có thể xảy ra nếu phản hồi của
+				// lần Acquire thành công trước đó bị mất. Chỉ cần trả về.
+				return
 			}
-			// Nếu putErr là ErrVersion, một client khác đã thắng chúng ta. Lặp lại và thử lại.
-			// Nếu putErr là ErrMaybe, chúng ta có thể đã có khóa. Vòng lặp tiếp theo
-			// sẽ làm rõ thông qua Get.
-		} else if err == rpc.OK && state == lk.value {
-			// Trường hợp 2: Chúng ta đã giữ khóa.
-			// Điều này có thể xảy ra nếu phản hồi của lần Acquire thành công trước đó của chúng ta bị mất.
-			// Khóa là idempotent, vì vậy chúng ta có thể chỉ cần trả về.
-			return
 		}
 		
-		// Đợi một chút trước khi thử lại để tránh làm quá tải máy chủ.
+		// Đợi một chút trước khi thử lại để tránh làm quá tải server.
 		time.Sleep(10 * time.Millisecond)
 	}
 }
 ```
 
-Triển khai này rất mạnh mẽ. Nó xử lý cuộc đua để chiếm khóa và trường hợp một client cần xác nhận lại quyền sở hữu sau một lỗi mạng. Điều này sẽ đủ để vượt qua `TestOneClientReliable` và `TestManyClientsReliable`.
+Triển khai này mang lại độ tin cậy cao. Nó không chỉ xử lý hiệu quả tình huống nhiều client cạnh tranh để giành khóa (race condition), mà còn đảm bảo rằng client có thể xác nhận lại quyền sở hữu của mình trong trường hợp xảy ra lỗi mạng. Nhờ cơ chế kiểm tra và thiết lập có điều kiện, logic này đủ mạnh để vượt qua toàn bộ các bài kiểm thử - từ những tình huống đơn giản đến các kịch bản phức tạp nhất.
 
-#### Bước 2.3: `Release` - An toàn và Idempotent
+#### 3.3. `Release` – Trả khóa một cách an toàn và idempotent
 
-Việc giải phóng khóa cũng phải được thực hiện một cách cẩn thận. Một client chỉ nên có thể giải phóng một khóa mà nó thực sự đang giữ.
+Việc trả khóa cần được thiết kế cẩn thận để tránh các lỗi khó lường. Nguyên tắc vàng là: __một client chỉ được phép trả khóa khi nó thực sự đang giữ khóa đó__. Điều này giúp ngăn một yêu cầu `Release` bị trễ (do lỗi mạng) vô tình làm mất quyền sở hữu của một client khác đã giành được khóa sau đó.
+
+Logic của `Release` cũng theo mô hình "test-and-set":
+
+1. __Test__: Dùng `Get` để kiểm tra xem ai đang giữ khóa hiện tại.
+2. __Set__: Nếu người giữ khóa là chính chúng ta (`state == lk.value`), thì thực hiện `Put` có điều kiện để đặt giá trị về `""`. Nếu không phải, không làm gì cả.
 
 __`src/kvsrv1/lock/lock.go`__
 
@@ -458,16 +556,16 @@ func (lk *Lock) Release() {
 }
 ```
 
-Triển khai này rất an toàn. Nó ngăn một client bị trễ giải phóng sai một khóa mà một client khác đã chiếm được. Bởi vì các lời gọi `Get` và `Put` cơ bản của chúng ta đã được thiết kế để xử lý các mạng không đáng tin cậy, logic khóa này hoạt động cho tất cả các trường hợp kiểm thử, bao gồm cả những trường hợp không đáng tin cậy.
+Triển khai này đảm bảo độ an toàn cao. Nó ngăn chặn tình huống một client vô tình giải phóng sai một khóa mà một client khác đã chiếm được - một lỗi có thể xảy ra nếu có sự chậm trễ hoặc mất gói tin trong mạng. Nhờ được xây dựng trên nền tảng các thao tác `Get` và `Put` có khả năng xử lý lỗi tốt, logic `Release` hoạt động cho tất cả các trường hợp kiểm thử, bao gồm cả những trường hợp không đáng tin cậy.
+
 
 ## Lời kết
 
-Chúc mừng! Bạn vừa xây dựng một dịch vụ key/value chịu lỗi *và* một khóa phân tán trên đó. Bạn đã giải quyết một số vấn đề phổ biến và quan trọng nhất trong hệ thống phân tán.
+Qua bài viết này, chúng ta đã cùng nhau tìm hiểu và triển khai một hệ thống key-value đơn giản, có khả năng chịu lỗi và đảm bảo tính nhất quán tuyến tính - nền tảng để xây dựng các cơ chế đồng bộ hóa trong hệ thống phân tán. Dựa trên đó, bài lab đã mở rộng thành cơ chế khóa phân tán - một ví dụ cụ thể của việc xây dựng tính đồng bộ trong môi trường không tin cậy.
 
 Những điểm chính cần rút ra là:
+- **Thiết kế đúng các thao tác cơ bản**: Ngay cả những thao tác đơn giản như Put có điều kiện, nếu được xây dựng chính xác, cũng có thể trở thành nền tảng vững chắc cho các cơ chế đồng bộ hóa phức tạp hơn sau này.
+- **Phân tách rõ ràng giữa các tầng hệ thống**: Việc xử lý lỗi và cơ chế thử lại (retry) được đặt ở tầng client giúp hệ thống tổng thể đơn giản, dễ bảo trì, đồng thời vẫn đảm bảo tính đúng đắn khi có lỗi mạng xảy ra.
+- **Tư duy idempotent để tăng khả năng chịu lỗi**: Thiết kế các thao tác sao cho có thể thực thi lại nhiều lần mà không gây ra tác dụng phụ là cách hiệu quả để đảm bảo hệ thống hoạt động ổn định trong môi trường phân tán, nơi các lỗi như timeout hay retry là điều tất yếu.
 
--   __Nguyên thủy là mạnh mẽ__: Một nguyên thủy đơn giản như `Put` có điều kiện có thể được sử dụng để xây dựng các dịch vụ phối hợp phức tạp như khóa.
--   __Phân lớp quan trọng__: Chúng ta đã xây dựng một khóa mạnh mẽ vì nó được phân lớp trên một client đã xử lý sự không đáng tin cậy của mạng.
--   __Idempotency là chìa khóa__: Thiết kế các thao tác như `Acquire` và `Release` để chúng là idempotent (an toàn để thử lại) là rất quan trọng để chịu lỗi.
-
-Máy chủ đơn node và khóa bạn đã xây dựng là các thành phần cốt lõi sẽ được làm cho hoàn toàn chịu lỗi trong Lab 3 bằng cách sử dụng thuật toán đồng thuận Raft. Các nguyên tắc bạn đã nắm vững ở đây là nền tảng cho mọi thứ tiếp theo.
+Các thành phần đã xây dựng trong lab này sẽ được mở rộng trong Lab 3, nơi hệ thống chuyển sang mô hình nhiều node và sử dụng thuật toán đồng thuận Raft để đảm bảo tính nhất quán. Những nguyên tắc thiết kế đã được áp dụng tại đây sẽ đóng vai trò làm nền tảng vững chắc cho việc phát triển các hệ thống phân tán có khả năng chịu lỗi và hoạt động ổn định trong môi trường thực tế.
