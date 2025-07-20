@@ -1,0 +1,473 @@
+---
+layout: post
+title: "Lab 2 khóa MIT 6.5840: Xây dựng Key/Value Store và Distributed Lock với tính nhất quán tuyến tính"
+date: 2025-07-20 23:30:00 +0700
+excerpt: >
+  Bài viết thứ hai trong chuỗi bài về hệ thống phân tán qua các bài lab của khóa học MIT 6.5840. Bài viết này trình bày cách xây dựng một máy chủ key/value đơn node với tính nhất quán tuyến tính (linearizability ) và sau đó sử dụng nó để xây dựng một distributed lock.
+comments: false
+---
+
+**Lab 2 của khóa học Hệ thống phân tán MIT 6.5840** là một bài thực hành thú vị giúp bạn tiếp cận cách xây dựng một hệ thống đáng tin cậy, ngay cả khi gặp lỗi mạng - chẳng hạn như gói tin bị mất hoặc trễ khiến client gửi lại yêu cầu nhiều lần - hay khi phải xử lý nhiều client truy cập song song.
+Bắt đầu từ một **key/value server đơn giản chạy trên một máy**, bạn sẽ dần hoàn thiện nó để đáp ứng những yêu cầu khắt khe về **tính nhất quán tuyến tính (linearizability)** và **at-most-once semantics** — hai yếu tố đóng vai trò then chốt trong việc xây dựng các hệ thống phân tán hiện đại như Amazon DynamoDB.
+Cụ thể, bạn sẽ phát triển hệ thống với các mục tiêu sau:
+- Đảm bảo các thao tác Put và Get luôn cho kết quả chính xác, kể cả khi nhiều client truy cập và thao tác đồng thời.
+- Xử lý đúng các trường hợp client gửi lại yêu cầu nhiều lần do gặp lỗi mạng hoặc hết thời gian chờ (timeout).
+- Xây dựng nền tảng cho cơ chế distributed lock - một công cụ quan trọng để đồng bộ hóa các tiến trình trong hệ thống phân tán.
+
+Server bạn sẽ xây dựng hỗ trợ hai thao tác chính:
+- `Put(key, value, version)`: Ghi một giá trị cho key tương ứng, nhưng chỉ khi version trùng khớp với dữ liệu hiện tại trên server.
+- `Get(key)`: Trả về giá trị hiện tại của key cùng với version tương ứng.
+
+Dù chỉ chạy trên một máy, server này phải đảm bảo hoạt động đúng trong môi trường mô phỏng có nhiều client đồng thời và các sự cố mạng. Điều khiến Lab 2 trở nên đặc biệt là bộ kiểm thử được thiết kế cực kỳ kỹ lưỡng — không chỉ kiểm tra các trường hợp đơn giản, mà còn mô phỏng các tình huống phức tạp như retry, race condition và truy cập song song. Bạn sẽ phải thực sự hiểu bản chất của vấn đề để vượt qua từng bài kiểm thử.
+
+Hoàn thành lab này sẽ giúp bạn hiểu và nắm chắc một số khái niệm quan trọng trong hệ thống phân tán:
+- **At-most-once semantics**: Cách đảm bảo một thao tác chỉ được thực thi một lần, kể cả khi client gửi lại yêu cầu do lỗi mạng.
+- **Linearizability**: Mô hình nhất quán mạnh, trong đó mọi thao tác xảy ra như thể được xử lý tuần tự bởi một tiến trình duy nhất.
+- **Distributed lock**: Cách xây dựng cơ chế khóa phân tán dựa trên một key/value store đơn giản.
+- **Phát triển dựa trên kiểm thử (test-driven development)**: Kỹ năng đọc hiểu và tận dụng bộ kiểm thử có sẵn để thiết kế một hệ thống chính xác và ổn định.
+
+## Linearizability là gì?
+Trước khi bắt tay vào xây dựng server, chúng ta cần làm rõ một nguyên tắc nền tảng mà toàn bộ hệ thống sẽ dựa vào: **linearizability**.
+
+Lý do rất đơn giản: bạn sẽ phát triển một server xử lý các thao tác đọc/ghi từ nhiều client đồng thời, trong điều kiện mạng không ổn định - có thể bị trễ, mất gói, hoặc thay đổi thứ tự truyền tải. Trong môi trường như vậy, không thể đơn giản giả định rằng “ai gửi trước thì được xử lý trước” — bởi vì “gửi trước” không đồng nghĩa với “đến trước” hay “xử lý trước”.
+
+Để đảm bảo tính đúng đắn và nhất quán của dữ liệu, bạn cần một mô hình xác định rõ: khi nào một thao tác đọc/ghi được xem là đã thực sự xảy ra, và làm thế nào để toàn hệ thống phản ánh điều đó một cách nhất quán. Mô hình linearizability chính là câu trả lời cho yêu cầu này.
+
+Hiểu và nắm vững linearizability là bước nền quan trọng. Không chỉ để vượt qua các test của bài lab - nơi mô phỏng đầy đủ các tình huống thực tế như retry, race condition hay lỗi mạng - mà còn để hình thành tư duy xây dựng hệ thống phân tán đáng tin cậy trong thực tế.
+
+### Tình huống giả định
+
+Giả sử Bob đang mở ứng dụng ngân hàng trên điện thoại để kiểm tra số dư tài khoản, trong khi Alice, người thân của anh, đang rút tiền từ cây ATM cách đó vài cây số. Câu hỏi đặt ra là: Bob sẽ nhìn thấy gì trên màn hình? Số dư đã được cập nhật theo giao dịch của Alice chưa?
+
+Linearizability - hay tính nhất quán tuyến tính - chính là mô hình giúp trả lời câu hỏi này một cách chặt chẽ. Nó định nghĩa rằng mỗi thao tác phải được xem như có hiệu lực tại một thời điểm duy nhất, nằm đâu đó giữa thời điểm bắt đầu và kết thúc của chính thao tác đó. Nhìn từ bên ngoài, **hệ thống sẽ hành xử như thể các thao tác được thực hiện tuần tự, từng cái một**, theo **một thứ tự rõ ràng** bởi **một luồng duy nhất** - bất kể thực tế đang có nhiều client và các thao tác diễn ra song song.
+
+Mô hình linearizability dựa trên ba nguyên tắc cốt lõi:
+- **Kết quả đọc phản ánh lần ghi gần nhất**: Nếu một thao tác ghi đã hoàn tất, thì mọi thao tác đọc xảy ra sau đó phải nhìn thấy kết quả mà thao tác ghi đã tạo ra.
+- **Ghi có thứ tự nhất quán**: Khi nhiều thao tác ghi diễn ra gần như cùng lúc (chồng lấn về thời gian), hệ thống phải sắp xếp chúng theo một thứ tự duy nhất và đảm bảo rằng tất cả các thao tác đọc đều thấy cùng một thứ tự đó.
+- **Phản ánh đúng thứ tự thao tác diễn ra quan sát được**: Nếu thao tác A kết thúc trước khi thao tác B bắt đầu (tức là có thể quan sát được rõ ràng rằng A xảy ra trước B), thì hệ thống phải đảm bảo rằng A được xử lý trước B. Kết quả mà hệ thống phản hồi cho client không được đảo ngược thứ tự đó.
+
+> Vậy thế nào là **đồng thời** hay **chồng lấn về mặt thời gian**? Hãy tưởng tượng thao tác A bắt đầu lúc 00:00:00.000 và kết thúc lúc 00:00:00.005 (tức 5 mili giây sau). Trong khi đó, thao tác B bắt đầu lúc 00:00:00.003 và kết thúc lúc 00:00:00.007. Rõ ràng, khoảng thời gian thực hiện hai thao tác này bị chồng lấn lên nhau. Vì thao tác B bắt đầu trước khi thao tác A kết thúc, bạn không thể xác định một cách rõ ràng rằng thao tác nào xảy ra “trước” thao tác còn lại. Do đó, hệ thống được phép chọn bất kỳ thứ tự nào trong hai thao tác này — miễn là thứ tự đó hợp lệ và được duy trì nhất quán trong toàn bộ hệ thống.
+
+Một hệ quả quan trọng của mô hình linearizability là: các thao tác xảy ra đồng thời – tức là chồng lấn nhau về mặt thời gian – có thể được hệ thống sắp xếp theo bất kỳ thứ tự nào, miễn là thứ tự đó hợp lệ và được duy trì nhất quán trong toàn bộ hệ thống. Tuy nhiên, đối với các thao tác có thứ tự rõ ràng về mặt thời điểm, nghĩa là thao tác A kết thúc trước khi thao tác B bắt đầu, thì hệ thống bắt buộc phải giữ đúng trình tự này khi phản hồi kết quả cho các client.
+
+Để hiểu rõ hơn cách linearizability trả lời cho tình huống Bob kiểm tra số dư trong khi Alice đang rút tiền, hãy xem xét hai kịch bản dưới đây:
+
+### Phân tích tình huống
+Để hiểu rõ hơn cách linearizability trả lời cho tình huống Bob kiểm tra số dư trong khi Alice đang rút tiền, hãy xem xét hai kịch bản dưới đây:
+#### Kịch bản 1: Các thao tác diễn ra không đồng thời
+Giả sử Alice thực hiện thao tác rút 100 đô la khỏi tài khoản của mình khi số dư ban đầu là 600 đô. Giao dịch của cô hoàn tất trước khi Bob mở ứng dụng ngân hàng để kiểm tra số dư. Cụ thể:
+- Lúc 8 giờ 00 phút 00 giây, Alice bắt đầu thao tác rút tiền.
+- Đến 8 giờ 00 phút 05 giây, giao dịch của Alice hoàn tất. Số dư lúc này còn lại 500 đô.
+- Đến 8 giờ 00 phút 10 giây, Bob mở ứng dụng và yêu cầu kiểm tra số dư.
+- Đến 8 giờ 00 phút 15 giây, hệ thống phản hồi kết quả kiểm tra cho Bob.
+
+Trong trường hợp này, vì Alice đã rút tiền xong trước khi Bob bắt đầu kiểm tra số dư, nên theo mô hình linearizability, Bob **phải** thấy số dư đã được cập nhật — tức là 500 đô la. Hệ thống cần đảm bảo rằng nếu một thao tác ghi kết thúc trước khi một thao tác đọc bắt đầu, thì thao tác đọc đó **phải phản ánh kết quả của thao tác ghi**.
+
+#### Kịch bản 2: Các thao tác đồng thời
+
+Giả sử lần này, khi Alice đang trong quá trình rút tiền, thì Bob gần như đồng thời mở ứng dụng để kiểm tra số dư. Cụ thể:
+
+- Lúc 8 giờ 00 phút 00 giây, Alice bắt đầu thao tác rút 100 đô la.
+- Lúc 8 giờ 00 phút 01 giây, Bob bắt đầu yêu cầu kiểm tra số dư.
+- Đến 8 giờ 00 phút 04 giây, giao dịch của Alice hoàn tất.
+- Đến 8 giờ 00 phút 06 giây, hệ thống phản hồi kết quả kiểm tra cho Bob.
+
+Vì các thao tác này chồng chéo về mặt thời gian, máy chủ có thể chọn một trong hai thứ tự:
+
+Lúc này, thao tác của Bob diễn ra **trong lúc** giao dịch của Alice đang được xử lý – tức là hai thao tác **đồng thời**, hay nói cách khác, bị **chồng lấn về mặt thời gian**. Trong tình huống như vậy, hệ thống **được phép** lựa chọn một trong hai thứ tự thực thi hợp lệ:
+- Trường hợp 1: Hệ thống coi như Alice đã rút tiền xong trước khi Bob kiểm tra → Bob thấy số dư là 500 đô.
+- Trường hợp 2: Hệ thống coi như Bob kiểm tra trước khi Alice rút xong → Bob thấy số dư vẫn là 600 đô.
+
+Cả hai phản hồi đều hợp lệ theo linearizability, miễn là hệ thống nhất quán với thứ tự đó cho tất cả các thao tác khác liên quan. Điều cốt lõi nằm ở chỗ: mỗi thao tác phải được gắn với **một thời điểm duy nhất** nằm trong khoảng thời gian nó thực thi, và toàn bộ hệ thống cần hành xử **như thể các thao tác được thực hiện lần lượt**, theo một dòng thời gian logic duy nhất.
+
+Bây giờ, hãy cùng bắt tay vào thực hành.
+
+## Phần 1: Key/Value server với tính nhất quán tuyến tính (linearizability)
+
+### 1. Yêu cầu chức năng
+Trong phần này, chúng ta sẽ xây dựng một Key/Value Server đơn giản hỗ trợ hai thao tác RPC cơ bản:
+
+- `Put(key, value, version)`: ghi dữ liệu có kiểm tra phiên bản.
+- `Get(key)`: truy xuất giá trị và phiên bản hiện tại của một khóa.
+
+#### 1.1. Mục tiêu chính
+Hệ thống cần đảm bảo hai yếu tố quan trọng:
+
+- **Tính đúng đắn "at-most-once"**: mỗi thao tác Put chỉ được thực hiện tối đa một lần, ngay cả khi client phải gửi lại yêu cầu do sự cố mạng.
+- **Tính tuần tự (linearizability)**: mọi thao tác từ phía client phải được thực hiện theo một thứ tự hợp lý như thể tất cả thao tác đều diễn ra tuần tự trên một hệ thống đơn luồng.
+
+#### 1.2. Quy tắc xử lý thao tác Put
+- Nếu phiên bản được gửi lên khớp với phiên bản hiện tại trên server, server sẽ cập nhật giá trị và tăng phiên bản lên 1.
+- Nếu phiên bản bằng 0 và key chưa tồn tại, server sẽ tạo mới key-value tương ứng.
+- Nếu phiên bản không khớp, server từ chối thao tác và trả về lỗi `ErrVersion`.
+
+#### 1.3. Mạng không tin cậy và cách xử lý
+Khi hoạt động trong môi trường mạng không tin cậy, client cần xử lý tình huống mất phản hồi bằng cách tự động gửi lại yêu cầu.
+
+Một trường hợp khó xử lý là khi server phản hồi lại bằng `rpc.ErrVersion` đối với một RPC mà client đã gửi lại (retry). Trong tình huống này, client không thể biết chắc liệu thao tác `Put` của mình có thực sự được server thực hiện hay chưa: có thể RPC đầu tiên đã được server xử lý thành công, nhưng phản hồi từ server bị mất trên đường truyền, khiến client phải gửi lại yêu cầu, và server trả về `rpc.ErrVersion` cho lần gửi lại đó.
+
+Hoặc cũng có thể một client khác đã cập nhật key trước khi RPC gửi lại của client này đến được server, khiến server không thực hiện RPC từ client này và trả về `rpc.ErrVersion`.
+
+Do đó, nếu client nhận được `rpc.ErrVersion` cho một yêu cầu `Put` đã được gửi lại (retransmitted), `client.Put` phải trả về `rpc.ErrMaybe` cho ứng dụng, bởi vì không thể xác định liệu thao tác đã được thực hiện hay chưa. Việc xử lý tiếp theo trong trường hợp không chắc chắn này sẽ do ứng dụng quyết định.
+
+Ngược lại, nếu server phản hồi `rpc.ErrVersion` cho một yêu cầu `Put` ban đầu (không phải là bản gửi lại), thì client có thể chắc chắn rằng RPC đó chưa từng được thực hiện và nên trả về `rpc.ErrVersion` cho ứng dụng.
+
+
+### 2. Hiểu cách hệ thống được kiểm chứng qua các test cases
+
+Bài lab cung cấp một tập hợp test case giá trị, giúp chúng ta kiểm chứng tính đúng đắn và hành vi của hệ thống. Hãy cùng phân tích từng test case để hiểu rõ nó đang kiểm tra điều gì.
+
+1.  __`TestReliablePut`__: Đây là test case cơ bản, kiểm tra hoạt động của các thao tác `Put` và `Get` trong điều kiện lý tưởng - mạng hoạt động ổn định, không có độ trễ, mất gói tin, hay trùng lặp thông điệp. Mục tiêu là xác minh rằng thao tác `Put` ghi dữ liệu thành công, `Get` có thể đọc lại chính xác giá trị vừa ghi, và máy chủ lưu trữ đúng phiên bản (version) của dữ liệu.
+
+2.  __`TestPutConcurrentReliable`__: Đây là test case kiểm tra tính đồng thời trong điều kiện mạng ổn định. Nó cho nhiều client đồng thời ghi vào cùng một key, nhằm đảm bảo hệ thống xử lý đúng khi có xung đột ghi. Cơ chế khóa bằng `sync.Mutex` được dùng để bảo vệ dữ liệu tránh khỏi lỗi ghi chồng. Ngoài ra, test case này còn sử dụng công cụ `Porcupine` để xác minh tính nhất quán tuyến tính (linearizability) bằng cách phân tích toàn bộ lịch sử các thao tác.
+
+3.  __`TestMemPutManyClientsReliable`__: Test case này đánh giá khả năng quản lý tài nguyên của hệ thống. Nó khởi tạo đến 100,000 client để kiểm tra xem máy chủ có bị rò rỉ bộ nhớ hay không. Một hệ thống triển khai đúng cần chỉ lưu lại trạng thái cuối cùng của dữ liệu, thay vì duy trì thông tin riêng biệt của từng client hoặc từng yêu cầu.
+
+4.  __`TestUnreliableNet`__: Đây là test case đánh giá khả năng chịu lỗi trong điều kiện mạng không ổn định, khi các thông điệp RPC có thể bị mất ở cả chiều gửi và nhận. Mục tiêu là kiểm tra logic thử lại (retry logic) của client, cũng như đảm bảo rằng máy chủ vẫn cung cấp đúng ngữ nghĩa at-most-once, tức là mỗi thao tác chỉ được thực hiện tối đa một lần.
+
+### 3. Giải thích các mã lỗi sử dụng trong bài lab
+
+Hệ thống RPC sử dụng một vài mã lỗi sau để biểu diễn trạng thái của các thao tác:
+
+-   `OK`: Thao tác đã thực hiện thành công.
+-   `ErrNoKey`: Khóa (key) được truy vấn không tồn tại trong hệ thống.
+-   `ErrVersion`: Server từ chối thao tác `Put` vì phiên bản (version) mà client gửi lên không hợp lệ. Mã lỗi này đóng vai trò quan trọng trong việc ngăn chặn việc ghi trùng lặp và đảm bảo tính nhất quán.
+-   `ErrMaybe`: Mã lỗi này xuất hiện khi client không nhận được phản hồi từ server sau khi gửi yêu cầu, do mất gói tin trong mạng. Khi đó, client không thể xác định thao tác đã được thực hiện hay chưa, và trả về ErrMaybe cho ứng dụng.
+
+### 4. Triển khai
+
+#### 4.1. Xây dựng khung xương của Server
+Trước tiên, chúng ta cần định nghĩa trạng thái mà server phải duy trì. Server cần một map lưu trữ dữ liệu trong bộ nhớ và một mutex để đảm bảo an toàn khi truy cập đồng thời.
+
+__`src/kvsrv1/server.go`__
+
+```go
+package kvsrv
+
+import (
+	"sync"
+	"6.5840/kvsrv1/rpc"
+)
+
+// ValueHandle lưu trữ cả giá trị và phiên bản hiện tại của nó.
+type ValueHandle struct {
+	Value   string
+	Version rpc.Tversion
+}
+
+type KVServer struct {
+	mu   sync.Mutex
+	data map[string]ValueHandle
+}
+
+func MakeKVServer() *KVServer {
+	kv := &KVServer{}
+	kv.data = make(map[string]ValueHandle)
+	return kv
+}
+
+// Trình xử lý RPC Get
+func (kv *KVServer) Get(args *rpc.GetArgs, reply *rpc.GetReply) {
+	kv.mu.Lock()
+	defer kv.mu.Unlock()
+
+	if value, ok := kv.data[args.Key]; ok {
+		reply.Value = value.Value
+		reply.Version = value.Version
+		reply.Err = rpc.OK
+	} else {
+		reply.Err = rpc.ErrNoKey
+	}
+}
+
+// Trình xử lý RPC Put
+func (kv *KVServer) Put(args *rpc.PutArgs, reply *rpc.PutReply) {
+	kv.mu.Lock()
+	defer kv.mu.Unlock()
+
+	key := args.Key
+	current, exists := kv.data[key]
+
+	if exists {
+		// Key đã tồn tại. Put chỉ hợp lệ nếu phiên bản của client khớp.
+		if args.Version != current.Version {
+			reply.Err = rpc.ErrVersion
+			return
+		}
+		// Phiên bản khớp. Cập nhật giá trị và tăng phiên bản.
+		kv.data[key] = ValueHandle{Value: args.Value, Version: args.Version + 1}
+	} else {
+		// Key không tồn tại. Nó chỉ có thể được tạo nếu client gửi phiên bản 0.
+		if args.Version != 0 {
+			reply.Err = rpc.ErrNoKey
+			return
+		}
+		// Tạo key mới. Phiên bản đầu tiên của nó là 1.
+		kv.data[key] = ValueHandle{Value: args.Value, Version: 1}
+	}
+	reply.Err = rpc.OK
+}
+```
+#### 4.2. Cài đặt thao tác Get
+
+Thao tác Get tương đối đơn giản vì chỉ là thao tác đọc. Do đó, việc hiện thực ở cả phía client và server khá dễ dàng.
+
+##### Hàm xử lý Get ở phía Server
+Hàm xử lý Get trên server cần khóa mutex, tra cứu khóa trong map, và trả về giá trị cùng phiên bản nếu tìm thấy. Nếu không, nó trả về lỗi ErrNoKey.
+
+```go
+func (kv *KVServer) Get(args *rpc.GetArgs, reply *rpc.GetReply) {
+	kv.mu.Lock()
+	defer kv.mu.Unlock()
+
+	if value, ok := kv.data[args.Key]; ok {
+		reply.Value = value.Value
+		reply.Version = value.Version
+		reply.Err = rpc.OK
+	} else {
+		reply.Err = rpc.ErrNoKey
+	}
+}
+```
+
+##### Phương thức Get phía Client
+Phía client cần xử lý các lỗi mạng. Vì Get là thao tác idempotent (lặp lại nhiều lần không thay đổi kết quả), client có thể gửi lại RPC nhiều lần cho đến khi nhận được phản hồi thành công.
+```go
+func (ck *Clerk) Get(key string) (string, rpc.Tversion, rpc.Err) {
+	args := rpc.GetArgs{Key: key}
+	reply := rpc.GetReply{}
+	for {
+		ok := ck.clnt.Call(ck.server, "KVServer.Get", &args, &reply)
+		if ok {
+			return reply.Value, reply.Version, reply.Err
+		}
+		// Gặp lỗi mạng, đợi một chút rồi thử lại.
+		time.Sleep(100 * time.Millisecond)
+	}
+}
+```
+
+#### 4.3. Cài đặt Put có điều kiện (At-Most-Once)
+
+Đây là phần phức tạp nhất của dịch vụ KV. Vì Put là thao tác không idempotent, ta phải cẩn thận để đảm bảo nó chỉ thực thi duy nhất một lần.
+
+##### Hàm xử lý Put phía Server
+Hàm xử lý Put sẽ sử dụng phiên bản mà client gửi lên để quyết định có chấp nhận cập nhật hay không.
+```go
+func (kv *KVServer) Put(args *rpc.PutArgs, reply *rpc.PutReply) {
+	kv.mu.Lock()
+	defer kv.mu.Unlock()
+
+	key := args.Key
+	current, exists := kv.data[key]
+
+	if exists {
+		// Nếu khóa đã tồn tại, chỉ chấp nhận nếu version khớp.
+		if args.Version != current.Version {
+			reply.Err = rpc.ErrVersion
+			return
+		}
+		// Cập nhật giá trị và tăng version.
+		kv.data[key] = ValueHandle{Value: args.Value, Version: args.Version + 1}
+	} else {
+		// Nếu chưa có key, chỉ cho phép tạo mới nếu version = 0.
+		if args.Version != 0 {
+			reply.Err = rpc.ErrNoKey
+			return
+		}
+		// Tạo mới key với version đầu tiên là 1.
+		kv.data[key] = ValueHandle{Value: args.Value, Version: 1}
+	}
+	reply.Err = rpc.OK
+}
+```
+Logic kiểm tra version này chính là yếu tố giúp client có thể gửi lại một cách an toàn.
+##### Phương thức Put phía Client
+Phía client, phương thức Put cần thực hiện xử lý đặc biệt để trả về ErrMaybe trong các trường hợp không chắc chắn, như yêu cầu được gửi lại nhưng không biết có thành công hay chưa.
+
+```go
+func (ck *Clerk) Put(key, value string, version rpc.Tversion) rpc.Err {
+	args := rpc.PutArgs{Key: key, Value: value, Version: version}
+	reply := rpc.PutReply{}
+	retries := 0
+	for {
+		ok := ck.clnt.Call(ck.server, "KVServer.Put", &args, &reply)
+		if ok {
+			// Nhận được phản hồi.
+
+			// Nếu đây là lần gửi lại (retry) và server trả về ErrVersion,
+			// ta không thể biết yêu cầu gốc có được thực hiện hay chưa.
+			if retries > 0 && reply.Err == rpc.ErrVersion {
+				return rpc.ErrMaybe
+			}
+
+			// Trường hợp còn lại, phản hồi của server là rõ ràng.
+			return reply.Err
+		}
+		// Không nhận được phản hồi (lỗi mạng), tăng retry và chờ.
+		retries++
+		time.Sleep(100 * time.Millisecond)
+	}
+}
+```
+
+Với các thành phần trên, hệ thống KV đơn giản của chúng ta đã hoàn chỉnh. sync.Mutex đảm bảo tính đồng bộ trên server, còn cơ chế kiểm tra phiên bản giữa client và server giúp tăng độ bền vững trong môi trường có lỗi mạng.
+
+Với nền tảng này, chúng ta đã sẵn sàng để giải quyết phần thứ hai của bài lab.
+
+## Phần 2: Xây dựng một khóa phân tán
+
+Bây giờ, chúng ta sẽ sử dụng dịch vụ KV mạnh mẽ của mình như một khối xây dựng cho một nguyên thủy đồng bộ hóa cấp cao hơn: một khóa phân tán. Mục tiêu là triển khai các phương thức `Acquire` và `Release` hoạt động đúng ngay cả khi nhiều client đang cạnh tranh để giành khóa qua một mạng không đáng tin cậy.
+
+### Giải thích bộ kiểm thử cho Khóa (`lock/lock_test.go`)
+
+Các bài kiểm thử cho khóa được thiết kế để xác minh một thuộc tính chính: __loại trừ tương hỗ (mutual exclusion)__. Chỉ một client được giữ khóa tại một thời điểm.
+
+#### Thiết lập kiểm thử thông minh: Khóa và "Honeypot"
+
+Bộ kiểm thử sử dụng một mẹo thông minh với hai key trong kho KV của chúng ta:
+
+1.  **Key của Khóa (`"l"`)**: Giá trị của key này đại diện cho trạng thái của chính khóa.
+2.  **Key Tài nguyên Chia sẻ (`"l0"`)**: Key này hoạt động như một "honeypot" (mồi nhử), mô phỏng một tài nguyên được khóa bảo vệ.
+
+Logic kiểm thử rất đơn giản: mỗi client sẽ cố gắng chiếm khóa trên `"l"`, sửa đổi tài nguyên tại `"l0"`, sau đó giải phóng khóa trên `"l"`.
+
+#### Khẳng định trong Vùng tranh chấp
+
+Hàm `oneClient` trong file kiểm thử định nghĩa hành vi này. Điểm cốt lõi là khi một client chiếm được khóa và đi vào vùng tranh chấp, nó sẽ kiểm tra tài nguyên `"l0"`. **Nếu giá trị của `"l0"` không rỗng, điều đó có nghĩa là một client khác cũng đang ở trong vùng tranh chấp của nó**—một sự thất bại nghiêm trọng của việc loại trừ tương hỗ, và bài kiểm thử sẽ panic ngay lập tức.
+
+#### Bốn kịch bản kiểm thử
+
+Logic `oneClient` này được chạy trong bốn điều kiện khác nhau để kiểm tra:
+
+-   **`TestManyClientsReliable`**: Kiểm tra tính đồng thời và nguyên tử khi nhiều client tranh giành khóa trên một mạng hoàn hảo.
+-   **`TestOneClientUnreliable`**: Kiểm tra khả năng chịu lỗi, đảm bảo các phương thức `Acquire`/`Release` là idempotent (an toàn để thử lại) khi RPC bị mất.
+-   **`TestManyClientsUnreliable`**: Thách thức cuối cùng, kết hợp cả tính đồng thời và lỗi mạng để đảm bảo triển khai của chúng ta mạnh mẽ trong điều kiện khó khăn nhất.
+
+### Triển khai Khóa từng bước
+
+Chiến lược của chúng ta sẽ là triển khai một __spinlock test-and-set__.
+
+-   __Trạng thái của Khóa__: Một key trong kho KV đại diện cho khóa. Một giá trị rỗng (`""`) có nghĩa là "rảnh". Một giá trị không rỗng có nghĩa là "đang được giữ" bởi client có ID duy nhất là giá trị đó.
+-   __Acquire__: Một client phải thay đổi giá trị một cách nguyên tử từ `""` thành ID duy nhất của chính nó. `Put` có phiên bản của chúng ta là hoàn hảo cho việc này.
+-   __Release__: Một client phải đặt lại giá trị thành `""`.
+
+#### Bước 2.1: `MakeLock` - Chuẩn bị
+
+Đầu tiên, hãy triển khai `MakeLock`. Mỗi instance của khóa cần một ID duy nhất để phân biệt với các client khác. Bài lab cho chúng ta biết phải sử dụng `kvtest.RandValue(8)`. Chúng ta cũng cần đảm bảo key của khóa tồn tại trong kho KV, khởi tạo nó thành `""` (rảnh).
+
+__`src/kvsrv1/lock/lock.go`__
+
+```go
+package lock
+
+import (
+	"time"
+	"6.5840/kvsrv1/rpc"
+	kvtest "6.5840/kvtest1"
+)
+
+type Lock struct {
+	ck    kvtest.IKVClerk
+	key   string // Key trong kho k/v đại diện cho khóa
+	value string // ID duy nhất cho người giữ khóa này
+}
+
+func MakeLock(ck kvtest.IKVClerk, l string) *Lock {
+	lk := &Lock{
+		ck:    ck,
+		key:   l,
+		value: kvtest.RandValue(8), // Một ID duy nhất cho client này
+	}
+	// Khởi tạo key của khóa thành "" (rảnh) nếu nó chưa tồn tại.
+	// Chúng ta sử dụng phiên bản 0, chỉ thành công nếu key là mới.
+	// Không sao nếu thao tác này thất bại với ErrVersion; điều đó chỉ có nghĩa là
+	// một client khác đã khởi tạo nó trước.
+	lk.ck.Put(l, "", 0)
+	return lk
+}
+```
+
+#### Bước 2.2: `Acquire` - Logic Spinlock
+
+Bây giờ là logic `Acquire` cốt lõi. Đây phải là một vòng lặp tiếp tục cho đến khi nó chiếm được khóa thành công.
+
+__`src/kvsrv1/lock/lock.go`__
+
+```go
+func (lk *Lock) Acquire() {
+	for {
+		// Test: Đọc trạng thái hiện tại của khóa.
+		state, version, err := lk.ck.Get(lk.key)
+
+		// Trường hợp 1: Khóa đang rảnh.
+		if err == rpc.OK && state == "" {
+			// Set: Cố gắng chiếm khóa một cách nguyên tử bằng cách đặt giá trị duy nhất của chúng ta.
+			// Thao tác này chỉ thành công nếu phiên bản không thay đổi kể từ lần Get của chúng ta.
+			putErr := lk.ck.Put(lk.key, lk.value, version)
+			if putErr == rpc.OK {
+				return // Thành công! Chúng ta đã chiếm được khóa.
+			}
+			// Nếu putErr là ErrVersion, một client khác đã thắng chúng ta. Lặp lại và thử lại.
+			// Nếu putErr là ErrMaybe, chúng ta có thể đã có khóa. Vòng lặp tiếp theo
+			// sẽ làm rõ thông qua Get.
+		} else if err == rpc.OK && state == lk.value {
+			// Trường hợp 2: Chúng ta đã giữ khóa.
+			// Điều này có thể xảy ra nếu phản hồi của lần Acquire thành công trước đó của chúng ta bị mất.
+			// Khóa là idempotent, vì vậy chúng ta có thể chỉ cần trả về.
+			return
+		}
+		
+		// Đợi một chút trước khi thử lại để tránh làm quá tải máy chủ.
+		time.Sleep(10 * time.Millisecond)
+	}
+}
+```
+
+Triển khai này rất mạnh mẽ. Nó xử lý cuộc đua để chiếm khóa và trường hợp một client cần xác nhận lại quyền sở hữu sau một lỗi mạng. Điều này sẽ đủ để vượt qua `TestOneClientReliable` và `TestManyClientsReliable`.
+
+#### Bước 2.3: `Release` - An toàn và Idempotent
+
+Việc giải phóng khóa cũng phải được thực hiện một cách cẩn thận. Một client chỉ nên có thể giải phóng một khóa mà nó thực sự đang giữ.
+
+__`src/kvsrv1/lock/lock.go`__
+
+```go
+func (lk *Lock) Release() {
+	for {
+		state, version, err := lk.ck.Get(lk.key)
+
+		// Chúng ta chỉ giải phóng khóa nếu chúng ta là người giữ hiện tại.
+		if err == rpc.OK && state == lk.value {
+			// Cố gắng đặt lại khóa thành "" (rảnh).
+			putErr := lk.ck.Put(lk.key, "", version)
+			if putErr == rpc.OK || putErr == rpc.ErrVersion {
+				// Thành công, hoặc ai đó khác đã lấy khóa sau chúng ta.
+				// Trong cả hai trường hợp, chúng ta không còn là người giữ, vì vậy công việc của chúng ta đã xong.
+				return
+			}
+			// Nếu putErr là ErrMaybe, lặp lại và thử lại để đảm bảo giải phóng.
+		} else if err == rpc.OK {
+			// Chúng ta không phải là người giữ, vì vậy không có gì để làm.
+			return
+		}
+
+		// Khi có lỗi Get, đợi và thử lại.
+		time.Sleep(10 * time.Millisecond)
+	}
+}
+```
+
+Triển khai này rất an toàn. Nó ngăn một client bị trễ giải phóng sai một khóa mà một client khác đã chiếm được. Bởi vì các lời gọi `Get` và `Put` cơ bản của chúng ta đã được thiết kế để xử lý các mạng không đáng tin cậy, logic khóa này hoạt động cho tất cả các trường hợp kiểm thử, bao gồm cả những trường hợp không đáng tin cậy.
+
+## Lời kết
+
+Chúc mừng! Bạn vừa xây dựng một dịch vụ key/value chịu lỗi *và* một khóa phân tán trên đó. Bạn đã giải quyết một số vấn đề phổ biến và quan trọng nhất trong hệ thống phân tán.
+
+Những điểm chính cần rút ra là:
+
+-   __Nguyên thủy là mạnh mẽ__: Một nguyên thủy đơn giản như `Put` có điều kiện có thể được sử dụng để xây dựng các dịch vụ phối hợp phức tạp như khóa.
+-   __Phân lớp quan trọng__: Chúng ta đã xây dựng một khóa mạnh mẽ vì nó được phân lớp trên một client đã xử lý sự không đáng tin cậy của mạng.
+-   __Idempotency là chìa khóa__: Thiết kế các thao tác như `Acquire` và `Release` để chúng là idempotent (an toàn để thử lại) là rất quan trọng để chịu lỗi.
+
+Máy chủ đơn node và khóa bạn đã xây dựng là các thành phần cốt lõi sẽ được làm cho hoàn toàn chịu lỗi trong Lab 3 bằng cách sử dụng thuật toán đồng thuận Raft. Các nguyên tắc bạn đã nắm vững ở đây là nền tảng cho mọi thứ tiếp theo.
