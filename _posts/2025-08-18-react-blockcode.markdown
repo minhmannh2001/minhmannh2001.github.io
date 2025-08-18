@@ -1,9 +1,9 @@
 ---
 layout: post
-title: "Creating a Code Block Component in React"
+title: "Rewriting a JavaScript Classic in React: A Learning Journey"
 date: 2025-08-18 23:30:00 +0700
 excerpt: >
-  A guide on how to create a reusable code block component in React with syntax highlighting.
+  This post documents the journey of rewriting the 'Blockcode' visual programming toolkit from the book *500 Lines or Less* in React. Follow along to see how a classic JavaScript project was modernized using a component-based architecture, React hooks for state management, and an interactive drag-and-drop interface.
 comments: false
 ---
 
