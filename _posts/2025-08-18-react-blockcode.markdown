@@ -49,7 +49,7 @@ The first step in the rewrite was to break the UI into reusable components. At t
 
 This component-based architecture, with `App` at its core, makes it much easier to manage the complexity of the UI and to reason about the different parts of the application.
 
-![Component Diagram](./reactflow(1).png)
+![Component Diagram](/img/blockcode/components-architecture.jpg)
 
 ### 3.3. The `App` Component: The Master Builder
 
