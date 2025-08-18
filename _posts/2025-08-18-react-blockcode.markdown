@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "Rewriting a JavaScript Classic in React: A Learning Journey"
-date: 2025-08-18 23:30:00 +0700
+date: 2025-08-17 23:30:00 +0700
 excerpt: >
   This post documents the journey of rewriting the 'Blockcode' visual programming toolkit from the book *500 Lines or Less* in React. Follow along to see how a classic JavaScript project was modernized using a component-based architecture, React hooks for state management, and an interactive drag-and-drop interface.
 comments: false
@@ -750,6 +750,12 @@ While the rewrite is complete, there are always more features to add. Here are a
 *   **UI Enhancements:** A visual refresh, including a dark mode and more polished block designs, would improve the user experience.
 *   **Backend Integration:** Adding a backend would allow users to save their scripts to an account and share them with others.
 
-## 8. Conclusion
+## 8. Source Code
+
+The complete source code for this project is available on GitHub. Feel free to explore the code, open issues, and contribute if you're interested.
+
+[**View on GitHub**](https://github.com/minhmannh2001/react-blockcode)
+
+## 9. Conclusion
 
 Rewriting the Blockcode project in React was a rewarding experience. It was a practical way to learn the framework and a fun project to work on. If you’re new to React, I highly recommend taking on a similar project. Find something you’re passionate about, break it down into small pieces, and start building. You’ll be amazed at how much you learn along the way.
