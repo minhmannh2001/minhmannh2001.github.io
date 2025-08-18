@@ -11,7 +11,7 @@ comments: false
 
 As a developer looking to dive deeper into frontend development, I decided to take on a fun and challenging project: rewriting the "Blockcode" visual programming toolkit from the book *500 Lines or Less* in React. This blog post documents my journey, from understanding the original codebase to building a modern, component-based application.
 
-## The Original Blockcode Project
+## 1. The Original Blockcode Project
 
 Blockcode is a visual programming environment where users can drag and drop blocks to create scripts. These scripts can then be executed to draw shapes on a canvas. The original project, built with pure HTML, CSS, and JavaScript, is a great example of how to build a simple, interactive application without any frameworks.
 
@@ -23,7 +23,7 @@ The UI is divided into three columns:
 
 The original implementation uses a combination of DOM manipulation and event listeners to handle the drag-and-drop functionality. The state of the application is managed through global variables and the structure of the DOM itself.
 
-## Why Rewrite in React?
+## 2. Why Rewrite in React?
 
 I chose to rewrite Blockcode in React for a few reasons:
 
@@ -31,13 +31,13 @@ I chose to rewrite Blockcode in React for a few reasons:
 *   **Modernizing the Codebase:** The original project, while functional, uses an older style of JavaScript. I wanted to see how I could modernize the codebase using modern JavaScript features and a component-based architecture.
 *   **Improving Maintainability:** By breaking the UI into reusable components, I hoped to create a more maintainable and scalable application.
 
-## The Rewrite Process: A Step-by-Step Guide
+## 3. The Rewrite Process: A Step-by-Step Guide
 
-### Setting Up the React Project
+### 3.1. Setting Up the React Project
 
 I started by setting up a new React project using Create React App. This provided me with a solid foundation for building the application, including a development server, a build process, and a testing framework.
 
-### Breaking the UI into Components
+### 3.2. Breaking the UI into Components
 
 The first step in the rewrite was to break the UI into reusable components. At the highest level, the application is orchestrated by a main `App` component, which acts as the "master builder."
 
@@ -51,7 +51,7 @@ This component-based architecture, with `App` at its core, makes it much easier 
 
 ![Component Diagram](./reactflow(1).png)
 
-### The `App` Component: The Master Builder
+### 3.3. The `App` Component: The Master Builder
 
 The `App` component is the central hub that brings all the other parts together. It's responsible for:
 
@@ -106,11 +106,11 @@ export default App;
 
 As you can see, the `App` component uses the `useDragAndDrop` hook to manage the state of the `scriptBlocks` and the drag-and-drop functionality. It then passes this state and the handler functions down to the `Menu`, `Script`, and `Canvas` components as props. This ensures that all components are synchronized and that the data flows in a single, predictable direction.
 
-### A Closer Look at the `Block` Component
+### 3.4. A Closer Look at the `Block` Component
 
 The `Block` component is the heart of our visual programming interface. It's the reusable piece of UI that represents a single instruction in our script. To understand how it works, we need to look at two key parts: the **block definition** and the **React component** that brings it to life.
 
-#### Block Definition
+#### 3.4.1. Block Definition
 
 Think of a block definition as a blueprint. It's a plain JavaScript object that describes everything a block can do. These definitions tell our application what to render and how the block should behave. All the block definitions are stored in a central file.
 
@@ -130,7 +130,7 @@ const BLOCKS = [
 - **`value`**: If a block needs a number input (like "move forward **10** steps"), it will have a `value` property.
 - **`contents`**: This tells us what the block "contains." If it's an empty array (`[]`), it means this block is a "container" that can hold other blocks inside it (like our `repeat` block).
 
-#### The React Component
+#### 3.4.2. The React Component
 
 The `Block` React component takes a block definition and turns it into a visual element that you can see and interact with. It displays the block's name, provides an input field for its value, and handles the visual styling.
 
@@ -193,7 +193,7 @@ sequenceDiagram
     BlockComponent-->>App: Displays a visual, interactive block
 ```
 
-### The Menu: Your Block Library
+### 3.5. The Menu: Your Block Library
 
 Now that we have our `Block` component, we need a place to display all the available blocks. This is where the `Menu` component comes in. The `Menu` component is responsible for rendering a list of all the available blocks that users can drag and drop into the script area.
 
@@ -231,13 +231,13 @@ export default Menu;
 
 This component maps over the `BLOCKS` array and renders a `Block` for each definition. The `onDragStart` prop is crucial for enabling the drag-and-drop functionality, which we'll discuss later.
 
-### The Script Area: Assembling Your Program
+### 3.6. The Script Area: Assembling Your Program
 
 Once you have a library of blocks in the Menu, you need a place to assemble them into a program. That's the role of the Script Area. It's the main workspace where you drag blocks from the Menu and drop them to create a sequence of commands. Blocks snap together vertically, and you can even nest blocks inside special "container" blocks like `repeat`.
 
 The Script Area also includes controls to clear the workspace, and eventually, to save and load scripts.
 
-#### The `Script` Component
+#### 3.6.1. The `Script` Component
 
 This entire workspace is managed by our `Script` component. It's responsible for:
 
@@ -289,7 +289,7 @@ export default Script;
 
 The `Script` component receives the list of `blocks` as a prop and maps over it, rendering a `Block` component for each item in the list. When a block is dropped onto the Script Area, the list of blocks is updated, and React re-renders the component to show the new state of the script.
 
-### The Canvas and the Turtle: Making it Draw
+### 3.7. The Canvas and the Turtle: Making it Draw
 
 The final piece of the UI is the `Canvas` component. This is where the magic happens! The `Canvas` is a drawing board where a virtual "turtle" executes the commands from the Script Area and draws shapes. It provides immediate visual feedback, allowing users to see the results of their code in real-time.
 
@@ -313,7 +313,7 @@ sequenceDiagram
     TurtleEngine-->>CanvasComponent: Draws shapes on the canvas
 ```
 
-#### The `Canvas` Component: The Interpreter
+#### 3.7.1. The `Canvas` Component: The Interpreter
 
 The `Canvas` component orchestrates the entire drawing process. It uses a `useEffect` hook that watches for any changes to the `blocks` prop. Whenever the script is updated, the effect runs, telling the Turtle to clear the canvas and redraw the entire script from the beginning.
 
@@ -373,7 +373,7 @@ const Canvas = ({ blocks }) => {
 };
 ```
 
-#### The `Turtle` Class: The Artist
+#### 3.7.2. The `Turtle` Class: The Artist
 
 The `Turtle` class (`src/turtle.js`) encapsulates all the low-level drawing logic. It doesn't know anything about React or blocks; it just knows how to draw on a canvas. It tracks its own state:
 *   **Position**: Its `x` and `y` coordinates.
@@ -457,7 +457,7 @@ sequenceDiagram
     TurtleEngine-->>CanvasComponent: Draws shapes on the canvas
 ```
 
-#### The `Canvas` Component and the Turtle Engine
+#### 3.7.3. The `Canvas` Component and the Turtle Engine
 
 The `Canvas` component uses the HTML `<canvas>` element to create the drawing surface. It holds a reference to this element using `useRef`. The core logic resides in a `useEffect` hook that runs whenever the `blocks` in the script change.
 
@@ -540,7 +540,7 @@ class Turtle {
 ```
 Together, the `Canvas` component orchestrates the drawing process, while the `Turtle` class handles the low-level drawing commands.
 
-### Managing State and Implementing Drag-and-Drop
+### 3.8. Managing State and Implementing Drag-and-Drop
 
 One of the most critical aspects of the rewrite was handling the application's state and the complex interactions of drag-and-drop. In the original project, this was done with global variables and direct DOM manipulation. In React, I could create a much more robust and maintainable system.
 
@@ -553,7 +553,7 @@ To handle the drag-and-drop logic, I created a custom hook, `useDragAndDrop`. Th
 *   Rearrange blocks already in your "Script".
 *   Even "delete" a block by dragging it back to the "Menu" area.
 
-#### The `useDragAndDrop` Hook
+#### 3.8.1. The `useDragAndDrop` Hook
 
 The `App` component calls this hook to get the state and the handler functions, which it then passes down to the `Menu` and `Script` components.
 
@@ -599,7 +599,7 @@ function App() {
 
 This setup decouples the components. The `Menu` and `Script` components don't need to know the implementation details of the drag-and-drop logic; they just need to call the functions passed to them as props.
 
-#### What Happens Under the Hood?
+#### 3.8.2. What Happens Under the Hood?
 
 Let's trace the journey of a block from the `Menu` to the `Script`.
 
@@ -713,13 +713,13 @@ const handleDrop = (e, dropZoneType, dropTarget) => {
 ```
 The logic here handles all cases: adding a new block from the menu, moving a block within the script, nesting blocks, and deleting blocks by dragging them back to the menu. After the `scriptBlocks` array is modified, `setScriptBlocks(newScriptBlocks)` is called. This updates the state, causing React to re-render the `Script` component and display the program in its new configuration. This approach keeps the drag-and-drop logic separate from the components, making the code more modular and easier to maintain.
 
-## 5. Challenges Faced
+## 4. Challenges Faced
 
 Every project has its hurdles, and this one was no exception. The biggest challenge was, without a doubt, the drag-and-drop system. Implementing it in a way that felt intuitive and handled all the edge cases—like nesting blocks, reordering them, and deleting them—required careful state management.
 
 Aligning this with React’s unidirectional data flow was a puzzle. I had to ensure that the state, which was managed in the main `App` component, was updated correctly no matter where the user dragged a block. This led me to create the `useDragAndDrop` hook, which centralized the logic and kept the components clean. It was a fantastic learning experience in building complex, interactive UIs in React.
 
-## 6. Comparing the Old and New
+## 5. Comparing the Old and New
 
 The rewrite was a success, and the comparison between the two implementations highlights the benefits of using a modern framework like React.
 
@@ -733,7 +733,7 @@ The rewrite was a success, and the comparison between the two implementations hi
 
 The component-based architecture makes the new version far more maintainable. Each piece of the UI is a self-contained unit, making it easier to understand, test, and modify. While the user experience is similar, the developer experience is worlds apart.
 
-## 7. What I Learned
+## 6. What I Learned
 
 This project was an incredible learning journey. It solidified my understanding of core React concepts and taught me how to approach building a modern web application. My key takeaways include:
 
@@ -742,7 +742,7 @@ This project was an incredible learning journey. It solidified my understanding 
 *   **Custom Hooks:** I discovered the power of custom hooks for encapsulating and reusing complex logic, as I did with the `useDragAndDrop` hook.
 *   **Modern JavaScript:** I was able to apply modern JavaScript features (ES6+) to write cleaner and more concise code.
 
-## 8. Future Plans
+## 7. Future Plans
 
 While the rewrite is complete, there are always more features to add. Here are a few ideas I’m considering for the future:
 
@@ -750,6 +750,6 @@ While the rewrite is complete, there are always more features to add. Here are a
 *   **UI Enhancements:** A visual refresh, including a dark mode and more polished block designs, would improve the user experience.
 *   **Backend Integration:** Adding a backend would allow users to save their scripts to an account and share them with others.
 
-## Conclusion
+## 8. Conclusion
 
 Rewriting the Blockcode project in React was a rewarding experience. It was a practical way to learn the framework and a fun project to work on. If you’re new to React, I highly recommend taking on a similar project. Find something you’re passionate about, break it down into small pieces, and start building. You’ll be amazed at how much you learn along the way.
