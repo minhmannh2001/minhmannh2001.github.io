@@ -969,6 +969,129 @@ td.gutter {
   transition: color 0.3s ease;
 }
 
+/* --- Timeline Page --- */
+
+.timeline-container {
+  position: relative;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+
+.timeline-line {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(to bottom, #0085a1, #005a6b);
+  transform: translateX(-50%);
+  z-index: 1;
+}
+
+.timeline-event {
+  position: relative;
+  margin-bottom: 60px;
+  display: flex;
+  align-items: center;
+  z-index: 2;
+}
+
+.timeline-event.timeline-left {
+  flex-direction: row;
+}
+
+.timeline-event.timeline-right {
+  flex-direction: row-reverse;
+}
+
+.timeline-content {
+  width: 45%;
+  background: #fff;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.timeline-content:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 15px rgba(0, 133, 161, 0.2);
+  border-color: #0085a1;
+}
+
+.timeline-left .timeline-content {
+  margin-right: auto;
+  text-align: right;
+}
+
+.timeline-right .timeline-content {
+  margin-left: auto;
+  text-align: left;
+}
+
+.timeline-marker {
+  position: absolute;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  background: #0085a1;
+  border: 4px solid #fff;
+  border-radius: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  box-shadow: 0 0 0 4px #0085a1;
+}
+
+.timeline-date {
+  font-size: 14px;
+  color: #0085a1;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.timeline-title {
+  font-size: 20px;
+  font-weight: bold;
+  color: #404040;
+  margin-bottom: 10px;
+}
+
+.timeline-description {
+  font-size: 15px;
+  color: #666;
+  line-height: 1.6;
+}
+
+/* Responsive design for mobile */
+@media (max-width: 768px) {
+  .timeline-line {
+    left: 30px;
+  }
+  
+  .timeline-event {
+    flex-direction: row !important;
+    padding-left: 60px;
+  }
+  
+  .timeline-content {
+    width: 100%;
+    text-align: left !important;
+  }
+  
+  .timeline-marker {
+    left: 30px;
+  }
+  
+  .timeline-left .timeline-content,
+  .timeline-right .timeline-content {
+    margin-left: 0;
+    margin-right: 0;
+  }
+}
+}
+
 .language-switcher-link .current-lang.active,
 .language-switcher-link .other-lang.active {
   color: #0085a1;

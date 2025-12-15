@@ -126,9 +126,25 @@
   {% assign page_base_name = page_filename %}
   {% assign page_other_lang = '' %}
   
-  {% comment %} First check permalink (for HTML files like series-vi.html) {% endcomment %}
+  {% comment %} First check permalink (for HTML files like series-vi.html, timeline-vi.html) {% endcomment %}
   {% if page.permalink %}
-    {% if page.permalink contains '-en.html' %}
+    {% if page.permalink == '/series-en.html' %}
+      {% assign detected_lang = 'en' %}
+      {% assign page_base_name = 'series' %}
+      {% assign page_other_lang = 'vi' %}
+    {% elsif page.permalink == '/series-vi.html' %}
+      {% assign detected_lang = 'vi' %}
+      {% assign page_base_name = 'series' %}
+      {% assign page_other_lang = 'en' %}
+    {% elsif page.permalink == '/timeline-en.html' %}
+      {% assign detected_lang = 'en' %}
+      {% assign page_base_name = 'timeline' %}
+      {% assign page_other_lang = 'vi' %}
+    {% elsif page.permalink == '/timeline-vi.html' %}
+      {% assign detected_lang = 'vi' %}
+      {% assign page_base_name = 'timeline' %}
+      {% assign page_other_lang = 'en' %}
+    {% elsif page.permalink contains '-en.html' %}
       {% assign detected_lang = 'en' %}
       {% assign page_base_name = page.permalink | replace: '-en.html', '' | replace: '/', '' %}
       {% assign page_other_lang = 'vi' %}

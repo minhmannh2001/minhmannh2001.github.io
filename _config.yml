@@ -27,6 +27,7 @@ navbar-links:
   Open Learning: "openlearning"
   Series: "series"
   Projects: "projects"
+  Blog Timeline: "timeline.html"
 #  Resources:
 #    - Beautiful Jekyll: "http://deanattali.com/beautiful-jekyll/"
 #    - Learn markdown: "http://www.markdowntutorial.com/"

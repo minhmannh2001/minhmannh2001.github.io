@@ -1,0 +1,23 @@
+---
+layout: page
+title: Blog Timeline
+permalink: /timeline.html
+redirect_from:
+  - /timeline/
+---
+
+<script>
+  // Redirect to the correct language version based on preference
+  (function() {
+    var preferredLang = localStorage.getItem('siteLanguage') || 'vi';
+    var baseUrl = window.location.origin + (window.location.pathname.includes('/minhmannh2001.github.io') ? '/minhmannh2001.github.io' : '');
+    var targetUrl = baseUrl + (preferredLang === 'en' ? '/timeline-en.html' : '/timeline-vi.html');
+    // Only redirect if not already on a language-specific timeline page
+    if (!window.location.pathname.includes('/timeline-en.html') && !window.location.pathname.includes('/timeline-vi.html')) {
+      window.location.replace(targetUrl);
+    }
+  })();
+</script>
+
+<p>Redirecting...</p>
+
