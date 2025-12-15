@@ -361,7 +361,7 @@ var main = {
     // Detect current page language from URL
     var detectPageLanguage = function() {
       var currentPath = window.location.pathname;
-      var pageMatch = currentPath.match(/(aboutme|openlearning)-(\w+)\.html$/);
+      var pageMatch = currentPath.match(/(aboutme|openlearning|series)-(\w+)\.html$/);
       if (pageMatch) {
         return pageMatch[2]; // 'en' or 'vi'
       }
@@ -388,8 +388,9 @@ var main = {
       // Update all language switchers
       updateLanguageSwitcher(newLang);
       
-      // Handle page redirects for aboutme and openlearning
+      // Handle page redirects for aboutme, openlearning, and series
       var currentPath = window.location.pathname;
+      // Only handle series list pages, not series detail pages (which are in /series/ subdirectory)
       if (currentPath.includes('/aboutme') || currentPath.includes('/openlearning')) {
         var pageMatch = currentPath.match(/(aboutme|openlearning)(?:-(\w+))?\.html$/);
         if (pageMatch) {
@@ -398,6 +399,12 @@ var main = {
           window.location.href = newPath;
           return;
         }
+      }
+      // Handle series list pages specifically (series-vi.html, series-en.html, series.html, /series/)
+      if (currentPath.match(/^\/series(-(vi|en))?\.html$/) || currentPath === '/series/' || currentPath === '/series') {
+        var newPath = '/series-' + newLang + '.html';
+        window.location.href = newPath;
+        return;
       }
     });
     

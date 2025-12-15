@@ -1,0 +1,48 @@
+{% comment %}
+  Calculate language status for a series
+  Returns: lang_status (all, mixed, single)
+  Usage: {% include series_lang_status.html series=series %}
+{% endcomment %}
+
+{% assign posts_with_both = 0 %}
+{% assign total_posts = include.series.posts | size %}
+
+{% for post_url in include.series.posts %}
+  {% assign has_vi = false %}
+  {% assign has_en = false %}
+  {% assign post_slug = post_url | split: '/' | last %}
+  {% assign post_slug_base = post_slug | remove: '-vi' | remove: '-en' %}
+  
+  {% comment %} Check all posts to see if this post has both language versions {% endcomment %}
+  {% for post in site.posts %}
+    {% assign post_url_parts = post.url | split: '/' %}
+    {% assign post_slug_from_url = post_url_parts | last | remove: '.html' | remove: '/' %}
+    {% assign post_slug_from_url_base = post_slug_from_url | remove: '-vi' | remove: '-en' %}
+    
+    {% if post_slug_from_url_base == post_slug_base %}
+      {% assign post_filename = post.path | split: '/' | last %}
+      {% if post_filename contains '-vi.markdown' or post_filename contains '-vi.md' %}
+        {% assign has_vi = true %}
+      {% elsif post_filename contains '-en.markdown' or post_filename contains '-en.md' %}
+        {% assign has_en = true %}
+      {% else %}
+        {% assign has_vi = true %}
+      {% endif %}
+    {% endif %}
+  {% endfor %}
+  
+  {% if has_vi and has_en %}
+    {% assign posts_with_both = posts_with_both | plus: 1 %}
+  {% endif %}
+{% endfor %}
+
+{% comment %} Determine language status {% endcomment %}
+{% assign lang_status = "single" %}
+{% if posts_with_both == total_posts %}
+  {% assign lang_status = "all" %}
+{% elsif posts_with_both > 0 and posts_with_both < total_posts %}
+  {% assign lang_status = "mixed" %}
+{% else %}
+  {% assign lang_status = "single" %}
+{% endif %}
+

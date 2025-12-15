@@ -4,16 +4,39 @@ title: Post Series
 permalink: /series.html
 redirect_from:
   - /series/
+redirect: true
 ---
+
+<script>
+  // Redirect to the correct language version based on preference
+  (function() {
+    var preferredLang = localStorage.getItem('siteLanguage') || 'vi';
+    var baseUrl = window.location.origin + (window.location.pathname.includes('/minhmannh2001.github.io') ? '/minhmannh2001.github.io' : '');
+    var targetUrl = baseUrl + (preferredLang === 'en' ? '/series-en.html' : '/series-vi.html');
+    window.location.href = targetUrl;
+  })();
+</script>
+
+<p>Redirecting...</p>
 
 <div class="series-list">
   {% for series in site.data.series %}
+    {% include series_lang_status.html series=series %}
     {% assign series_url = "/series/" | append: series.slug | append: ".html" %}
     <a href="{{ series_url | prepend: site.baseurl }}" class="series-card">
       <div class="series-card-content">
         <h2 class="series-title">{{ series.name }}</h2>
         <p class="series-description">{{ series.description }}</p>
-        <span class="series-post-count">{{ series.posts | size }} Posts</span>
+        <div class="series-meta">
+          <span class="series-post-count">{{ series.posts | size }} Posts</span>
+          {% if lang_status == "all" %}
+            <span class="series-lang-badge lang-all">Có cả tiếng Việt và tiếng Anh / Both Vietnamese and English</span>
+          {% elsif lang_status == "mixed" %}
+            <span class="series-lang-badge lang-mixed">Một số bài có cả 2 ngôn ngữ / Some posts have both languages</span>
+          {% else %}
+            <span class="series-lang-badge lang-single">Chỉ một ngôn ngữ / Single language only</span>
+          {% endif %}
+        </div>
       </div>
     </a>
   {% endfor %}

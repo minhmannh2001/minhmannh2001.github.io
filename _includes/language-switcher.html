@@ -7,12 +7,21 @@
 {% assign other_version_url = '' %}
 {% assign has_specific_link = false %}
 
-{% comment %} Detect current language from page path {% endcomment %}
+{% comment %} Detect current language from page path or permalink {% endcomment %}
 {% if page.path %}
   {% assign filename = page.path | split: '/' | last %}
-  {% if filename contains '-en.markdown' or filename contains '-en.md' %}
+  {% if filename contains '-en.markdown' or filename contains '-en.md' or filename contains '-en.html' %}
     {% assign detected_lang = 'en' %}
-  {% elsif filename contains '-vi.markdown' or filename contains '-vi.md' %}
+  {% elsif filename contains '-vi.markdown' or filename contains '-vi.md' or filename contains '-vi.html' %}
+    {% assign detected_lang = 'vi' %}
+  {% endif %}
+{% endif %}
+
+{% comment %} Also check permalink for language {% endcomment %}
+{% if page.permalink %}
+  {% if page.permalink contains '-en.html' or page.permalink contains '-en/' %}
+    {% assign detected_lang = 'en' %}
+  {% elsif page.permalink contains '-vi.html' or page.permalink contains '-vi/' %}
     {% assign detected_lang = 'vi' %}
   {% endif %}
 {% endif %}
@@ -117,21 +126,56 @@
   {% assign page_base_name = page_filename %}
   {% assign page_other_lang = '' %}
   
-  {% if page_filename contains '-en.md' %}
-    {% assign detected_lang = 'en' %}
-    {% assign page_base_name = page_filename | replace: '-en.md', '' %}
-    {% assign page_other_lang = 'vi' %}
-  {% elsif page_filename contains '-vi.md' %}
-    {% assign detected_lang = 'vi' %}
-    {% assign page_base_name = page_filename | replace: '-vi.md', '' %}
-    {% assign page_other_lang = 'en' %}
+  {% comment %} First check permalink (for HTML files like series-vi.html) {% endcomment %}
+  {% if page.permalink %}
+    {% if page.permalink contains '-en.html' %}
+      {% assign detected_lang = 'en' %}
+      {% assign page_base_name = page.permalink | replace: '-en.html', '' | replace: '/', '' %}
+      {% assign page_other_lang = 'vi' %}
+    {% elsif page.permalink contains '-vi.html' %}
+      {% assign detected_lang = 'vi' %}
+      {% assign page_base_name = page.permalink | replace: '-vi.html', '' | replace: '/', '' %}
+      {% assign page_other_lang = 'en' %}
+    {% endif %}
   {% endif %}
   
+  {% comment %} If not found in permalink, check filename {% endcomment %}
+  {% unless page_other_lang != '' %}
+    {% if page_filename contains '-en.md' %}
+      {% assign detected_lang = 'en' %}
+      {% assign page_base_name = page_filename | replace: '-en.md', '' %}
+      {% assign page_other_lang = 'vi' %}
+    {% elsif page_filename contains '-vi.md' %}
+      {% assign detected_lang = 'vi' %}
+      {% assign page_base_name = page_filename | replace: '-vi.md', '' %}
+      {% assign page_other_lang = 'en' %}
+    {% elsif page_filename contains '-en.html' %}
+      {% assign detected_lang = 'en' %}
+      {% assign page_base_name = page_filename | replace: '-en.html', '' %}
+      {% assign page_other_lang = 'vi' %}
+    {% elsif page_filename contains '-vi.html' %}
+      {% assign detected_lang = 'vi' %}
+      {% assign page_base_name = page_filename | replace: '-vi.html', '' %}
+      {% assign page_other_lang = 'en' %}
+    {% endif %}
+  {% endunless %}
+  
   {% if page_base_name != '' and page_other_lang != '' %}
-    {% assign other_page_filename = page_base_name | append: '-' | append: page_other_lang | append: '.md' %}
+    {% comment %} Try to find the other language version {% endcomment %}
+    {% if page.permalink or page_filename contains '.html' %}
+      {% assign other_page_permalink = '/' | append: page_base_name | append: '-' | append: page_other_lang | append: '.html' %}
+    {% else %}
+      {% assign other_page_filename = page_base_name | append: '-' | append: page_other_lang | append: '.md' %}
+    {% endif %}
+    
     {% for site_page in site.pages %}
-      {% comment %} Check both by path and by permalink {% endcomment %}
-      {% if site_page.path == other_page_filename or site_page.path contains other_page_filename %}
+      {% comment %} Check by permalink first (most reliable) {% endcomment %}
+      {% if site_page.permalink == other_page_permalink %}
+        {% assign has_specific_link = true %}
+        {% assign other_version_url = site_page.permalink | prepend: site.baseurl | replace: '//', '/' %}
+        {% break %}
+      {% comment %} Check by filename (for .md files) {% endcomment %}
+      {% elsif site_page.path == other_page_filename %}
         {% assign has_specific_link = true %}
         {% if site_page.permalink %}
           {% assign other_version_url = site_page.permalink | prepend: site.baseurl | replace: '//', '/' %}
@@ -139,6 +183,16 @@
           {% assign other_version_url = site_page.url | prepend: site.baseurl | replace: '//', '/' %}
         {% endif %}
         {% break %}
+      {% comment %} Check by URL - but only if it's an exact match and at root level {% endcomment %}
+      {% elsif site_page.url == other_page_permalink %}
+        {% assign site_page_url_parts = site_page.url | split: '/' %}
+        {% comment %} Only match if it's in the root (not in a subdirectory like /series/) {% endcomment %}
+        {% comment %} Root level pages have URL like /page-en.html (2 parts: '' and 'page-en.html') {% endcomment %}
+        {% if site_page_url_parts.size <= 2 %}
+          {% assign has_specific_link = true %}
+          {% assign other_version_url = site_page.url | prepend: site.baseurl | replace: '//', '/' %}
+          {% break %}
+        {% endif %}
       {% endif %}
     {% endfor %}
   {% endif %}
