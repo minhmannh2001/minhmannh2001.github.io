@@ -804,6 +804,24 @@ td.gutter {
 
 /* --- Series Detail Page --- */
 
+.series-detail .series-header {
+  margin-bottom: 30px;
+}
+
+.series-detail .back-to-series {
+  display: inline-block;
+  color: #0085a1;
+  text-decoration: none;
+  font-size: 16px;
+  margin-bottom: 20px;
+  transition: color 0.2s;
+}
+
+.series-detail .back-to-series:hover {
+  color: #005a6b;
+  text-decoration: underline;
+}
+
 .series-detail h1 {
   font-size: 40px;
   margin-bottom: 10px;
@@ -823,6 +841,27 @@ td.gutter {
 .series-detail .post-list li {
   border-bottom: 1px solid #eee;
   padding: 20px 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.series-detail .post-list .post-number {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  background: #0085a1;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 18px;
+}
+
+.series-detail .post-list .post-content {
+  flex: 1;
 }
 
 .series-detail .post-list li:last-child {
@@ -836,6 +875,13 @@ td.gutter {
 
 .series-detail .post-list .post-link {
   font-size: 22px;
+  color: #404040;
+  text-decoration: none;
+}
+
+.series-detail .post-list .post-link:hover {
+  color: #0085a1;
+  text-decoration: underline;
 }
 
 .series-detail .post-list .post-meta {

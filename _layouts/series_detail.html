@@ -1,25 +1,103 @@
 ---
-layout: page
+layout: base
 ---
 
-<div class="series-detail">
-  <h1>{{ page.series.name }}</h1>
-  <p class="series-description">{{ page.series.description }}</p>
+{% include header.html type="page" %}
 
-  <hr>
+{% assign page_filename = page.path | split: '/' | last %}
+{% assign page_lang = '' %}
+{% if page_filename contains '-en.md' %}
+  {% assign page_lang = 'en' %}
+{% elsif page_filename contains '-vi.md' %}
+  {% assign page_lang = 'vi' %}
+{% else %}
+  {% assign page_lang = 'vi' %}
+{% endif %}
 
-  <ul class="post-list">
-    {% for post_url in page.series.posts %}
-      {% assign found_post = site.posts | where:"url", post_url | first %}
-      {% if found_post %}
-        <li>
-          <h3>
-            <a class="post-link" href="{{ found_post.url | prepend: site.baseurl }}">{{ found_post.title }}</a>
-          </h3>
-          <span class="post-meta">{{ found_post.date | date: "%b %-d, %Y" }}</span>
-          <p>{{ found_post.excerpt | strip_html | truncatewords: 30 }}</p>
-        </li>
+{% comment %} Get series data from JSON using the slug {% endcomment %}
+{% assign series = null %}
+{% assign series_slug_to_use = null %}
+
+{% comment %} Try to get slug from front matter first {% endcomment %}
+{% if page.series_slug %}
+  {% assign series_slug_to_use = page.series_slug %}
+{% endif %}
+
+{% comment %} If not found, extract from URL (e.g., /series/build-your-own-x-tu-xay-dung-mot-web-framework-voi-go.html) {% endcomment %}
+{% unless series_slug_to_use %}
+  {% assign url_parts = page.url | split: '/' %}
+  {% if url_parts.size >= 3 %}
+    {% assign filename = url_parts[2] | remove: '.html' %}
+    {% assign series_slug_to_use = filename %}
+  {% endif %}
+{% endunless %}
+
+{% comment %} Now find the series in the JSON data {% endcomment %}
+{% if series_slug_to_use %}
+  {% for s in site.data.series %}
+    {% if s.slug == series_slug_to_use %}
+      {% assign series = s %}
+      {% break %}
+    {% endif %}
+  {% endfor %}
+{% endif %}
+
+<div class="container" role="main" data-page-lang="{{ page_lang }}">
+  <div class="row">
+    <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+      {% if series %}
+      <div class="series-detail">
+        <div class="series-header">
+          <a href="{{ site.baseurl }}/series.html" class="back-to-series">← Back to All Series</a>
+          <h1>{{ series.name }}</h1>
+          <p class="series-description">{{ series.description }}</p>
+        </div>
+
+        <hr>
+
+        <ul class="post-list">
+          {% assign post_index = 0 %}
+          {% for post_url in series.posts %}
+            {% assign post_index = post_index | plus: 1 %}
+            {% assign found_post = null %}
+            {% comment %} Extract the slug from the series URL (last part after the last slash) {% endcomment %}
+            {% assign series_url_parts = post_url | split: '/' %}
+            {% assign series_slug = series_url_parts | last | remove: '.html' %}
+            
+            {% comment %} Try to find matching post by comparing slugs {% endcomment %}
+            {% for post in site.posts %}
+              {% assign post_url_parts = post.url | split: '/' %}
+              {% assign post_slug = post_url_parts | last | remove: '.html' | remove: '/' %}
+              {% comment %} Remove language suffix (-vi, -en) from both slugs for comparison {% endcomment %}
+              {% assign post_slug_base = post_slug | remove: '-vi' | remove: '-en' %}
+              {% assign series_slug_base = series_slug | remove: '-vi' | remove: '-en' %}
+              
+              {% if post_slug_base == series_slug_base %}
+                {% assign found_post = post %}
+                {% break %}
+              {% endif %}
+            {% endfor %}
+            
+            {% if found_post %}
+              <li>
+                <div class="post-number">{{ post_index }}</div>
+                <div class="post-content">
+                  <h3>
+                    <a class="post-link" href="{{ found_post.url | prepend: site.baseurl }}">{{ found_post.title }}</a>
+                  </h3>
+                  <span class="post-meta">{{ found_post.date | date: "%b %-d, %Y" }}</span>
+                  <p>{{ found_post.excerpt | strip_html | truncatewords: 30 }}</p>
+                </div>
+              </li>
+            {% endif %}
+          {% endfor %}
+        </ul>
+      </div>
+      {% else %}
+      <div class="series-detail">
+        <p>Series not found. Please check the series configuration.</p>
+      </div>
       {% endif %}
-    {% endfor %}
-  </ul>
+    </div>
+  </div>
 </div>
