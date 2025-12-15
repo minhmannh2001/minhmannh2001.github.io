@@ -8,11 +8,11 @@
 
   <title>Open Learning</title>
 
-  <meta name="author" content="Frederik Kratzert" />
+  <meta name="author" content="Nguyễn Minh Mạnh" />
 
   
 
-  <link rel="alternate" type="application/rss+xml" title="Flair of Machine Learning - A virtual proof that name is awesome!" href="/feed.xml" />
+  <link rel="alternate" type="application/rss+xml" title="Dev Path - Sharing My Development Journey" href="/feed.xml" />
 
   
 
@@ -56,7 +56,11 @@
   
 
    
-  <meta property="og:description" content="As a person who does a lot of autonomous learning, the Internet in these days offer a huge amount of possibilities to read/learn about any topic you might think of. There might be more the problem of filtering out useful/good content from the nearly infinite amount of sources. Inspired by...">
+  <meta property="og:description" content="
+
+Redirecting...
+
+">
   
 
 
@@ -82,7 +86,11 @@
   
 
   
-  <meta name="twitter:description" content="As a person who does a lot of autonomous learning, the Internet in these days offer a huge amount of possibilities to read/learn about any topic you might think of. There might be more the problem of filtering out useful/good content from the nearly infinite amount of sources. Inspired by...">
+  <meta name="twitter:description" content="
+
+Redirecting...
+
+">
   
 
   
@@ -106,7 +114,7 @@
         <span class="icon-bar"></span>
       </button>
       
-        <a class="navbar-brand" href="http://localhost:4000">Flair of Machine Learning</a>
+        <a class="navbar-brand" href="http://localhost:4000">Dev Path</a>
       
     </div>
 
@@ -150,11 +158,54 @@
 
 
 
+<a href="/series">Series</a>
+
+          </li>
+        
+        
+        
+          <li>
+            
+
+
+
+
+
+
 <a href="/projects">Projects</a>
 
           </li>
         
         
+        
+
+
+
+
+
+
+
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+    <li class="language-switcher-nav">
+      <a href="#" class="language-switcher-link" data-lang-selector="true" data-current-lang="vi" title="Select language">
+        <span class="current-lang">VI</span> / <span class="other-lang">EN</span>
+      </a>
+    </li>
+  
+
+
       </ul>
     </div>
 
@@ -184,12 +235,10 @@
   <div class="container">
     <div class="row">
       <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
-        <div class="post-heading">
+        <div class="page-heading">
           <h1>Open Learning</h1>
 		  
 		  
-		  
-		  <span class="post-meta">Posted on January 21, 2016</span>
 		  
         </div>
       </div>
@@ -201,80 +250,30 @@
 
 
 
-<div class="container">
+
+
+
+
+<div class="container" role="main" data-page-lang="vi">
   <div class="row">
     <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+      <script>
+  // Redirect to the correct language version based on preference
+  (function() {
+    var preferredLang = localStorage.getItem('siteLanguage') || 'vi';
+    var targetUrl = preferredLang === 'en' ? '/openlearning-en.html' : '/openlearning-vi.html';
+    window.location.href = targetUrl;
+  })();
+</script>
 
-      
-      
-      <article role="main" class="blog-post">
-        <p>As a person who does a lot of autonomous learning, the Internet in these days offer a huge amount of possibilities to read/learn about any topic you might think of. There might be more the problem of filtering out useful/good content from the nearly infinite amount of sources. Inspired by a <a href="https://github.com/danklotz/openLearning">colleague</a> I will try to give a record of whatever I read/saw and can recommend on specific topics. I will also try to add specific links that I have already studied in the past but may help any interested reader (or myself as lookup). Most stuff will be about machine learning in general and more specific about computer vision/image classification as my master thesis is related to these topics. But from time to time I might add also some more fun related topics.</p>
+<p>Redirecting...</p>
 
-<h3 id="machine-learning">Machine learning</h3>
 
-<h4 id="courses">Courses</h4>
-<ul>
-  <li><a href="https://www.youtube.com/playlist?list=PLUl4u3cNGP63gFHB6xb-kVBiQHYe_4hSi">MIT 6.034 Artificial Intelligence</a> by Patrick Winston (23 lectures + 7 Mega-Recitations)</li>
-  <li><a href="https://www.coursera.org/learn/machine-learning/">Coursera - Machine Learning by Stanford University</a> - online class by Andrew Ng (highly recommended)</li>
-  <li><a href="https://www.youtube.com/playlist?list=PLE6Wd9FR--Ecf_5nCbnSQMHqORpiChfJf">Undergraduate machine learning at UBC 2012</a> - by Nando de Freitas (33 lectures)</li>
-  <li><a href="https://www.youtube.com/playlist?list=PLE6Wd9FR--EfW8dtjAuPoTuPcqmOV53Fu">Deep Learning at Oxford 2015</a> - by Nando de Freitas (16 lectures)</li>
-  <li><a href="https://www.youtube.com/playlist?list=PLkt2uSq6rBVctENoVBg1TpCC7OQi31AlC">CS231n - CNNs for Visual Recognition</a> - by Fei-Fei Li and mainly Andrej Karpathy (<a href="https://cs231n.github.io/">Overview</a>)</li>
-  <li><a href="https://www.youtube.com/playlist?list=PL6Xpj9I5qXYEcOhn7TqghAJ6NAPrNmUBH">Neural networks class - Université de Sherbrook</a> by Hugo Larochelle (92 mostly short videos)</li>
-  <li><a href="https://www.youtube.com/playlist?list=PLf6wdSFWPsFiPs618yY1zaQOxlWiqnXsO">Deep Learning Talk MLSS 2014</a> - by Yoshua Bengio at MLSS 2014 (3 Parts)</li>
-</ul>
-
-<h4 id="videos">Videos</h4>
-<ul>
-  <li><a href="https://www.youtube.com/watch?v=RJVL80Gg3lA">Visualizing Data Using t-SNE</a> - GoogleTechTalk by Laurens van der Maaten presenting t-SNE</li>
-  <li><a href="https://www.youtube.com/watch?v=ghEmQSxT6tw">Visualizing and Understanding DNNs</a> by Matt Zeiler presenting deconv-nets for visualizing DNNs</li>
-  <li><a href="https://www.youtube.com/watch?v=FwFduRA_L6Q">Fun demo of CNN from ‘93</a> - Yann LeCun presenting his CNN for handwritten digits.</li>
-  <li><a href="https://www.youtube.com/watch?v=qv6UVOQ0F44">MarI/O</a> - <a href="http://nn.cs.utexas.edu/downloads/papers/stanley.ec02.pdf">NEAT</a> applied on Super Mario World by SethBling</li>
-  <li><a href="https://www.youtube.com/watch?v=0qVOUD76JOg">The Art of neural networks</a> - Mike Tyka talking about the evolution of art and programming</li>
-</ul>
-
-<h4 id="blogssites">Blogs/Sites</h4>
-<ul>
-  <li><a href="https://karpathy.github.io">Andrej Karpathys Blog</a> - Blog with a lot of well written articles mainly about CV and CNNs</li>
-  <li><a href="https://cs231n.github.io">CS231n</a> - corresponding site to the CS231n course from Standford university. Each topic covered in an article.</li>
-  <li><a href="http://ufldl.stanford.edu/tutorial/">UFLDL Tutorial</a> - Unsupervised Feature Learning and Deep Learning Tutorials by Standford University</li>
-  <li><a href="https://colah.github.io/posts/2015-08-Understanding-LSTMs/">Understanding LSTMs</a> - Some nice write up about LSTM-Nets by Christopher Olah</li>
-</ul>
-
-<h3 id="programming">Programming</h3>
-
-<h4 id="videos-1">Videos</h4>
-<ul>
-  <li><a href="https://www.youtube.com/watch?v=S75EdAcXHKk">Introduction to DL with Python</a> - Presentation by Alec Radford giving an overview of Deep Learning with Theano</li>
-</ul>
-
-<h4 id="blogssites-1">Blogs/Sites</h4>
-<ul>
-  <li><a href="http://undocumentedmatlab.com/">Undocumented Matlab</a> - One of the best Matlab related Sites I know.</li>
-  <li><a href="https://www.checkio.org">CheckiO</a> - Online game-based learning of Python</li>
-  <li><a href="http://deeplearning.net/software/theano/tutorial/">Theano Tutorial</a> - Introduction to Theano (Python libary)</li>
-  <li><a href="http://deeplearning.net/tutorial/">Theano Examples</a> - some more applied, though advanced tutorials.</li>
-</ul>
-
-<h3 id="general-scientific-stuff">General Scientific stuff</h3>
-
-<h4 id="videos-2">Videos</h4>
-<p>-<a href="https://www.youtube.com/watch?v=g3dkRsTqdDA">How to write a Scientific Paper</a> - Talk by Simon Peyton Jones</p>
-
-      </article>
-
-      
-
-      
-
-      <ul class="pager blog-pager">
-        
-        
-      </ul>
-
-      
+	    
     </div>
   </div>
 </div>
+
 
     <footer>
   <div class="container beautiful-jekyll-footer">
@@ -284,7 +283,7 @@
           
           
           <li>
-            <a href="https://github.com/kratzert" title="GitHub">
+            <a href="https://github.com/minhmannh2001" title="GitHub">
               <span class="fa-stack fa-lg" aria-hidden="true">
                 <i class="fa fa-circle fa-stack-2x"></i>
                 <i class="fa fa-github fa-stack-1x fa-inverse"></i>
@@ -294,21 +293,11 @@
           </li>
           
 		  
-          <li>
-            <a href="https://twitter.com/fkratzert" title="Twitter">
-              <span class="fa-stack fa-lg" aria-hidden="true">
-                <i class="fa fa-circle fa-stack-2x"></i>
-                <i class="fa fa-twitter fa-stack-1x fa-inverse"></i>
-              </span>
-              <span class="sr-only">Twitter</span>
-            </a>
-          </li>
-          
 	  
       
 		  
           <li>
-            <a href="mailto:f.kratzert@gmail.com" title="Email me">
+            <a href="mailto:nguyenminhmannh2001@gmail.com" title="Email me">
               <span class="fa-stack fa-lg" aria-hidden="true">
                 <i class="fa fa-circle fa-stack-2x"></i>
                 <i class="fa fa-envelope fa-stack-1x fa-inverse"></i>
@@ -319,7 +308,7 @@
           
 		  
           <li>
-            <a href="https://linkedin.com/in/frederik-kratzert-226a33148" title="LinkedIn">
+            <a href="https://linkedin.com/in/nguyenminhmannh2001/" title="LinkedIn">
               <span class="fa-stack fa-lg" aria-hidden="true">
                 <i class="fa fa-circle fa-stack-2x"></i>
                 <i class="fa fa-linkedin fa-stack-1x fa-inverse"></i>
@@ -336,28 +325,18 @@
       
       
 		  
-          <li>
-            <a href="/feed.xml" title="RSS">
-              <span class="fa-stack fa-lg" aria-hidden="true">
-                <i class="fa fa-circle fa-stack-2x"></i>
-                <i class="fa fa-rss fa-stack-1x fa-inverse"></i>
-              </span>
-              <span class="sr-only">RSS</span>
-            </a>
-          </li>
-          
       
       
       
         </ul>
         <p class="copyright text-muted">
-		  Frederik Kratzert
+		  Nguyễn Minh Mạnh
 		  &nbsp;&bull;&nbsp;
-		  2018
+		  2025
 
 		  
 		  &nbsp;&bull;&nbsp;
-		  <a href="http://localhost:4000">kratzert.github.io</a>
+		  <a href="http://localhost:4000">minhmannh2001.github.io</a>
 		  
 	    </p>
 	        <!-- Please don't remove this, keep my open source work credited :) -->
@@ -412,6 +391,17 @@
 	</script>
 	<!-- End Google Analytics -->
 
+
+<script src="https://unpkg.com/mermaid@8.9.3/dist/mermaid.min.js"></script>
+<script>
+  $(document).ready(function () {
+    mermaid.initialize({
+      startOnLoad:true,
+      theme: "default",
+    });
+    window.mermaid.init(undefined, document.querySelectorAll('.language-mermaid'));
+  });
+</script>
 
   
   </body>

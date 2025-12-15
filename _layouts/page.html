@@ -4,7 +4,17 @@ layout: base
 
 {% include header.html type="page" %}
 
-<div class="container" role="main">
+{% assign page_filename = page.path | split: '/' | last %}
+{% assign page_lang = '' %}
+{% if page_filename contains '-en.md' %}
+  {% assign page_lang = 'en' %}
+{% elsif page_filename contains '-vi.md' %}
+  {% assign page_lang = 'vi' %}
+{% else %}
+  {% assign page_lang = 'vi' %}
+{% endif %}
+
+<div class="container" role="main" data-page-lang="{{ page_lang }}">
   <div class="row">
     <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
       {{ content }}

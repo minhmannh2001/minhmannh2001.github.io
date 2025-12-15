@@ -130,9 +130,137 @@ var main = {
 	} else {
 	  $(".img-desc").hide();  
 	}
+  },
+  
+  // Language filtering functionality
+  initLanguageFilter : function() {
+    // Get language preference from localStorage or default to 'vi'
+    var getLanguagePreference = function() {
+      var stored = localStorage.getItem('siteLanguage');
+      return stored || 'vi';
+    };
+    
+    // Set language preference
+    var setLanguagePreference = function(lang) {
+      localStorage.setItem('siteLanguage', lang);
+    };
+    
+    // Filter posts based on language
+    var filterPosts = function(lang) {
+      var posts = document.querySelectorAll('.post-preview');
+      var visibleCount = 0;
+      
+      posts.forEach(function(post) {
+        var postLang = post.getAttribute('data-post-lang');
+        if (postLang === lang || !postLang) {
+          post.style.display = '';
+          visibleCount++;
+        } else {
+          post.style.display = 'none';
+        }
+      });
+      
+      // Show message if no posts found
+      var postsList = document.querySelector('.posts-list');
+      var noPostsMsg = document.getElementById('no-posts-message');
+      if (visibleCount === 0 && posts.length > 0) {
+        if (!noPostsMsg) {
+          noPostsMsg = document.createElement('div');
+          noPostsMsg.id = 'no-posts-message';
+          noPostsMsg.className = 'no-posts-message';
+          noPostsMsg.textContent = 'No posts found for the selected language.';
+          postsList.appendChild(noPostsMsg);
+        }
+        noPostsMsg.style.display = 'block';
+      } else if (noPostsMsg) {
+        noPostsMsg.style.display = 'none';
+      }
+    };
+    
+    // Handle language selector clicks
+    $(document).on('click', '.language-switcher-link[data-lang-selector="true"]', function(e) {
+      e.preventDefault();
+      var currentLang = $(this).attr('data-current-lang') || 'vi';
+      var newLang = currentLang === 'en' ? 'vi' : 'en';
+      
+      // Update preference
+      setLanguagePreference(newLang);
+      
+      // Filter posts
+      filterPosts(newLang);
+      
+      // Update all language switchers on the page
+      $('.language-switcher-link[data-lang-selector="true"]').each(function() {
+        var $current = $(this).find('.current-lang');
+        var $other = $(this).find('.other-lang');
+        if (newLang === 'en') {
+          $current.text('EN');
+          $other.text('VI');
+        } else {
+          $current.text('VI');
+          $other.text('EN');
+        }
+        $(this).attr('data-current-lang', newLang);
+      });
+    });
+    
+    // Apply language filter on page load
+    var preferredLang = getLanguagePreference();
+    filterPosts(preferredLang);
+    
+    // Update language switcher display based on preference
+    $('.language-switcher-link[data-lang-selector="true"]').each(function() {
+      var $current = $(this).find('.current-lang');
+      var $other = $(this).find('.other-lang');
+      if (preferredLang === 'en') {
+        $current.text('EN');
+        $other.text('VI');
+      } else {
+        $current.text('VI');
+        $other.text('EN');
+      }
+      $(this).attr('data-current-lang', preferredLang);
+    });
+    
+    // Handle page language switching - redirect to correct version if needed
+    var handlePageLanguage = function() {
+      var currentPath = window.location.pathname;
+      var preferredLang = getLanguagePreference();
+      
+      // Check if we're on a page with language suffix
+      var pageMatch = currentPath.match(/(aboutme|openlearning)-(\w+)\.html$/);
+      if (pageMatch) {
+        var pageName = pageMatch[1];
+        var currentPageLang = pageMatch[2];
+        
+        // If current page language doesn't match preference, redirect
+        if (currentPageLang !== preferredLang) {
+          var newPath = currentPath.replace('-' + currentPageLang + '.html', '-' + preferredLang + '.html');
+          // Check if the other language version exists before redirecting
+          // We'll let the user manually switch to avoid redirect loops
+        }
+      } else {
+        // If on a page without language suffix, check if we should redirect
+        // This handles cases where user navigates to base page
+        if (currentPath.includes('/aboutme') || currentPath.includes('/openlearning')) {
+          // Try to find the preferred language version
+          var basePath = currentPath.replace(/\.html$/, '');
+          var preferredPath = basePath + '-' + preferredLang + '.html';
+          // Don't auto-redirect, let user choose
+        }
+      }
+    };
+    
+    // Only run on pages (not posts or index)
+    if (document.querySelector('.page-content') || document.body.classList.contains('page')) {
+      // Don't auto-redirect, just update the switcher
+    }
   }
 };
 
 // 2fc73a3a967e97599c9763d05e564189
 
-document.addEventListener('DOMContentLoaded', main.init);
+document.addEventListener('DOMContentLoaded', function() {
+  main.init();
+  main.initLanguageFilter();
+});

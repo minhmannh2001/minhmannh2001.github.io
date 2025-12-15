@@ -2,12 +2,13 @@
 layout: post
 title: "System Design: Understanding Twitter's Architecture - A Deep Dive"
 date: '2025-12-15 15:00:00 +0700'
+permalink: /2025/12/15/system-design-twitter-architecture-vi.html
 excerpt: >
   After a long break, I'm back! In this first blog post about system design interview preparation, I explore the high-level architecture of a Twitter-like social network. Learn about load balancers, caching strategies, database sharding, and the fascinating trade-offs engineers make to handle billions of reads daily.
 comments: false
 ---
 
-Hello there! It's been quite a while since I last uploaded a blog post. I've been through some significant changes—I switched jobs and needed time to familiarize myself with my new role. Now that I'm settled in, I'm ready to come back to blogging and share what I'm learning.
+Xin chào nhé! It's been quite a while since I last uploaded a blog post. I've been through some significant changes—I switched jobs and needed time to familiarize myself with my new role. Now that I'm settled in, I'm ready to come back to blogging and share what I'm learning.
 
 Currently, I'm focusing on preparing for system design interview rounds, which are a crucial part of technical interviews at many tech companies. This is my first blog post on this topic, and I'm excited to share what I've learned.
 

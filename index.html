@@ -7,7 +7,16 @@ use-site-title: true
 
 <div class="posts-list">
   {% for post in paginator.posts %}
-  <article class="post-preview">
+  {% assign post_filename = post.path | split: '/' | last %}
+  {% assign post_lang = '' %}
+  {% if post_filename contains '-en.markdown' or post_filename contains '-en.md' %}
+    {% assign post_lang = 'en' %}
+  {% elsif post_filename contains '-vi.markdown' or post_filename contains '-vi.md' %}
+    {% assign post_lang = 'vi' %}
+  {% else %}
+    {% assign post_lang = 'vi' %}
+  {% endif %}
+  <article class="post-preview" data-post-lang="{{ post_lang }}">
     <a href="{{ post.url | prepend: site.baseurl }}">
 	  <h2 class="post-title">{{ post.title }}</h2>
 

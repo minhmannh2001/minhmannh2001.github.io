@@ -1,86 +1,229 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Flair of Machine Learning</title>
-    <description>A virtual proof that name is awesome!</description>
+    <title>Dev Path</title>
+    <description>Sharing My Development Journey</description>
     <link>http://localhost:4000</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml" />
     
       <item>
-        <title>Numba series part 2: Custom data types and parallelization</title>
+        <title>System Design: Understanding Twitter's Architecture - A Deep Dive</title>
         <description>
           
-          This is the second part of my little series about the Numba library. This time we will take a look on how we can use custom data types inside of functions we like to get optimized by Numba. Out-of-the-box Numba can handle scalars and n-dimensional Numpy arrays as input. Tuples...
+          Xin chào nhé! It’s been quite a while since I last uploaded a blog post. I’ve been through some significant changes—I switched jobs and needed time to familiarize myself with my new role. Now that I’m settled in, I’m ready to come back to blogging and share what I’m learning....
         </description>
-        <pubDate>Mon, 25 Sep 2017 15:04:00 +0200</pubDate>
-        <link>http://localhost:4000/2017/09/25/numba-series-part-2-custom-data-types-and-parallelization.html</link>
-        <guid isPermaLink="true">http://localhost:4000/2017/09/25/numba-series-part-2-custom-data-types-and-parallelization.html</guid>
+        <pubDate>Mon, 15 Dec 2025 09:00:00 +0100</pubDate>
+        <link>http://localhost:4000/2025/12/15/system-design-twitter-architecture-vi.html</link>
+        <guid isPermaLink="true">http://localhost:4000/2025/12/15/system-design-twitter-architecture-vi.html</guid>
       </item>
     
       <item>
-        <title>Numba series part 1: The @jit decorator and some more Numba basics</title>
+        <title>System Design: Understanding Twitter's Architecture - A Deep Dive</title>
         <description>
           
-          In the first part of the little Numba series I’ve planned we will focus mainly on the @jit decorator. Their exist different decorators in the Numba library and we will talk about them later, but for the start we will concentrate on the @jit one. On our way we will...
+          Hello there! It’s been quite a while since I last uploaded a blog post. I’ve been through some significant changes—I switched jobs and needed time to familiarize myself with my new role. Now that I’m settled in, I’m ready to come back to blogging and share what I’m learning. Currently,...
         </description>
-        <pubDate>Thu, 21 Sep 2017 21:41:00 +0200</pubDate>
-        <link>http://localhost:4000/2017/09/21/numba-series-part-1-the-jit-decorator-and-some-more-numba-basics.html</link>
-        <guid isPermaLink="true">http://localhost:4000/2017/09/21/numba-series-part-1-the-jit-decorator-and-some-more-numba-basics.html</guid>
+        <pubDate>Mon, 15 Dec 2025 09:00:00 +0100</pubDate>
+        <link>http://localhost:4000/2025/12/15/system-design-twitter-architecture-en.html</link>
+        <guid isPermaLink="true">http://localhost:4000/2025/12/15/system-design-twitter-architecture-en.html</guid>
       </item>
     
       <item>
-        <title>Introduction to the Numba library</title>
+        <title>Rewriting a JavaScript Classic in React: A Learning Journey</title>
         <description>
           
-          Recently I found myself watching through some of the videos from the SciPy 2017 Conference, when I stumbled over the tutorial Numba - Tell Those C++ Bullies to Get Lost by Gil Forsyth and Lorena Barba. Although I have to say I find the title a bit pathetic, I really...
+          Rewriting a JavaScript Classic in React: A Learning Journey As a developer looking to dive deeper into frontend development, I decided to take on a fun and challenging project: rewriting the “Blockcode” visual programming toolkit from the book 500 Lines or Less in React. This blog post documents my journey,...
         </description>
-        <pubDate>Tue, 12 Sep 2017 10:48:00 +0200</pubDate>
-        <link>http://localhost:4000/2017/09/12/introduction-to-the-numba-library.html</link>
-        <guid isPermaLink="true">http://localhost:4000/2017/09/12/introduction-to-the-numba-library.html</guid>
+        <pubDate>Sun, 17 Aug 2025 23:30:00 +0700</pubDate>
+        <link>http://localhost:4000/2025/08/17/react-blockcode-en.html</link>
+        <guid isPermaLink="true">http://localhost:4000/2025/08/17/react-blockcode-en.html</guid>
       </item>
     
       <item>
-        <title>Speeding up TensorFlows Input Pipeline</title>
+        <title>Lab 2 khóa MIT 6.5840: Xây dựng Key/Value Store và Distributed Lock với tính nhất quán tuyến tính</title>
         <description>
           
-          When I wrote the last article about the new Dataset API TensorFlow got with the release of version 1.2, it was still only a release candidate and the documentation was pretty bad. There was a good discussion about the new input pipeline on GitHub and in the last comment Derek...
+          Lab 2 của khóa học Hệ thống phân tán MIT 6.5840 là một bài thực hành thú vị giúp bạn tiếp cận cách xây dựng một hệ thống đáng tin cậy, ngay cả khi gặp lỗi mạng - chẳng hạn như gói tin bị mất hoặc trễ khiến client gửi...
         </description>
-        <pubDate>Mon, 11 Sep 2017 10:42:00 +0200</pubDate>
-        <link>http://localhost:4000/2017/09/11/speeding-up-tensorflows-input-pipeline.html</link>
-        <guid isPermaLink="true">http://localhost:4000/2017/09/11/speeding-up-tensorflows-input-pipeline.html</guid>
+        <pubDate>Sun, 20 Jul 2025 23:30:00 +0700</pubDate>
+        <link>http://localhost:4000/2025/07/20/mit-6.5840-distributed-systems-lab-2-vi.html</link>
+        <guid isPermaLink="true">http://localhost:4000/2025/07/20/mit-6.5840-distributed-systems-lab-2-vi.html</guid>
       </item>
     
       <item>
-        <title>Example of TensorFlows new Input Pipeline</title>
+        <title>Lab 1 khóa MIT 6.5840: Xây dựng framework MapReduce từ đầu</title>
         <description>
           
-          Update 11.09.2017 I wrote a new article about a small code change that let's the whole input pipeline run in parallel. So have a look here. Anyway in this article I explain the basic concept of the new Dataset API, so it's still worth reading. During the time I wrote...
+          MIT 6.5840 là một khóa học nổi tiếng về hệ thống phân tán được giảng dạy tại MIT. Khóa học này bao quát nhiều chủ đề quan trọng trong lĩnh vực hệ thống phân tán như khả năng chịu lỗi (fault tolerance), tính nhất quán (consistency), sao chép dữ liệu...
         </description>
-        <pubDate>Thu, 15 Jun 2017 10:56:00 +0200</pubDate>
-        <link>http://localhost:4000/2017/06/15/example-of-tensorflows-new-input-pipeline.html</link>
-        <guid isPermaLink="true">http://localhost:4000/2017/06/15/example-of-tensorflows-new-input-pipeline.html</guid>
+        <pubDate>Fri, 04 Jul 2025 03:19:00 +0700</pubDate>
+        <link>http://localhost:4000/2025/07/04/mit-6.5840-distributed-systems-lab-1-vi.html</link>
+        <guid isPermaLink="true">http://localhost:4000/2025/07/04/mit-6.5840-distributed-systems-lab-1-vi.html</guid>
       </item>
     
       <item>
-        <title>Finetuning AlexNet with TensorFlow</title>
+        <title>Build your own X: Xây dựng ORM framework với Go - Phần 7</title>
         <description>
           
-          Update 15.05.2017 I updated the code of the repository to work with TensorFlows new input pipeline. Read my other blogpost for an explanation of this new feature coming with TensorFlows version &amp;gt;= 1.12rc0. The links below in this article are still pointing to the code explained here in this article....
+          Phần 7: Tự động cập nhật cấu trúc bảng database khi struct thay đổi 👉 Mã nguồn đầy đủ trên GitHub Đây là bài viết cuối cùng trong loạt hướng dẫn tự xây dựng ORM framework GeeORM với Go trong 7 ngày. Ở phần này, chúng ta sẽ tìm hiểu...
         </description>
-        <pubDate>Fri, 24 Feb 2017 10:11:00 +0100</pubDate>
-        <link>http://localhost:4000/2017/02/24/finetuning-alexnet-with-tensorflow.html</link>
-        <guid isPermaLink="true">http://localhost:4000/2017/02/24/finetuning-alexnet-with-tensorflow.html</guid>
+        <pubDate>Tue, 17 Jun 2025 08:00:00 +0700</pubDate>
+        <link>http://localhost:4000/2025/06/17/build-your-own-x-orm-framework-in-go-part-7-vi.html</link>
+        <guid isPermaLink="true">http://localhost:4000/2025/06/17/build-your-own-x-orm-framework-in-go-part-7-vi.html</guid>
       </item>
     
       <item>
-        <title>Understanding the backward pass through Batch Normalization Layer</title>
+        <title>Build your own X: Xây dựng ORM framework với Go - Phần 6</title>
         <description>
           
-          At the moment there is a wonderful course running at Standford University, called CS231n - Convolutional Neural Networks for Visual Recognition, held by Andrej Karpathy, Justin Johnson and Fei-Fei Li. Fortunately all the course material is provided for free and all the lectures are recorded and uploaded on Youtube. This...
+          Phần 6: Hỗ trợ Transaction trong ORM Framework GeeORM 👉 Mã nguồn đầy đủ trên GitHub Đây là bài viết thứ sáu trong loạt hướng dẫn tự xây dựng ORM framework GeeORM với Go trong 7 ngày. Ở phần này, chúng ta sẽ tìm hiểu về transaction (giao dịch) trong...
         </description>
-        <pubDate>Fri, 12 Feb 2016 13:54:00 +0100</pubDate>
-        <link>http://localhost:4000/2016/02/12/understanding-the-gradient-flow-through-the-batch-normalization-layer.html</link>
-        <guid isPermaLink="true">http://localhost:4000/2016/02/12/understanding-the-gradient-flow-through-the-batch-normalization-layer.html</guid>
+        <pubDate>Sat, 14 Jun 2025 03:00:00 +0200</pubDate>
+        <link>http://localhost:4000/2025/06/14/build-your-own-x-orm-framework-in-go-part-6-vi.html</link>
+        <guid isPermaLink="true">http://localhost:4000/2025/06/14/build-your-own-x-orm-framework-in-go-part-6-vi.html</guid>
+      </item>
+    
+      <item>
+        <title>Build your own X: Xây dựng ORM framework với Go - Phần 5</title>
+        <description>
+          
+          Phần 5: Hooks – Thêm hàm xử lý trước và sau thao tác dữ liệu 👉 Mã nguồn đầy đủ trên GitHub Đây là bài viết thứ năm trong loạt hướng dẫn tự xây dựng ORM framework GeeORM với Go trong 7 ngày. Ở phần này, chúng ta sẽ tìm...
+        </description>
+        <pubDate>Wed, 11 Jun 2025 21:00:00 +0200</pubDate>
+        <link>http://localhost:4000/2025/06/11/build-your-own-x-orm-framework-in-go-part-5-vi.html</link>
+        <guid isPermaLink="true">http://localhost:4000/2025/06/11/build-your-own-x-orm-framework-in-go-part-5-vi.html</guid>
+      </item>
+    
+      <item>
+        <title>Build your own X: Xây dựng ORM framework với Go - Phần 4</title>
+        <description>
+          
+          Phần 4: Chain Operation, Update và Delete 👉 Mã nguồn đầy đủ trên GitHub Đây là bài viết thứ tư trong loạt bài hướng dẫn xây dựng ORM framework GeeORM từ đầu bằng Go trong 7 ngày. Ở phần này, chúng ta sẽ tìm hiểu cách sử dụng chain operation...
+        </description>
+        <pubDate>Mon, 09 Jun 2025 22:30:00 +0200</pubDate>
+        <link>http://localhost:4000/2025/06/09/build-your-own-x-orm-framework-in-go-part-4-vi.html</link>
+        <guid isPermaLink="true">http://localhost:4000/2025/06/09/build-your-own-x-orm-framework-in-go-part-4-vi.html</guid>
+      </item>
+    
+      <item>
+        <title>Build your own X: Xây dựng ORM framework với Go - Phần 3</title>
+        <description>
+          
+          Phần 3: Thêm và truy vấn bản ghi trong GeeORM 👉 Mã nguồn đầy đủ trên GitHub Đây là bài viết thứ ba trong loạt bài hướng dẫn xây dựng ORM framework GeeORM từ đầu bằng Go trong 7 ngày. Mục tiêu của bài viết này Hướng dẫn cách triển...
+        </description>
+        <pubDate>Fri, 06 Jun 2025 14:30:00 +0200</pubDate>
+        <link>http://localhost:4000/2025/06/06/build-your-own-x-orm-framework-in-go-part-3-vi.html</link>
+        <guid isPermaLink="true">http://localhost:4000/2025/06/06/build-your-own-x-orm-framework-in-go-part-3-vi.html</guid>
+      </item>
+    
+      <item>
+        <title>Build your own X: Xây dựng ORM framework với Go - Phần 2</title>
+        <description>
+          
+          Phần 2: Chuyển đổi struct thành bảng trong GeeORM 👉 Mã nguồn đầy đủ trên GitHub Đây là bài viết thứ hai trong loạt bài hướng dẫn xây dựng ORM framework GeeORM từ đầu bằng Go trong 7 ngày. Mục tiêu của bài viết này Tạo lớp Dialect để hỗ...
+        </description>
+        <pubDate>Tue, 03 Jun 2025 14:30:00 +0200</pubDate>
+        <link>http://localhost:4000/2025/06/03/build-your-own-x-orm-framework-in-go-part-2-vi.html</link>
+        <guid isPermaLink="true">http://localhost:4000/2025/06/03/build-your-own-x-orm-framework-in-go-part-2-vi.html</guid>
+      </item>
+    
+      <item>
+        <title>Build your own X: Tự xây dựng một ORM framework với Go - Phần 1</title>
+        <description>
+          
+          Phần 1: Cơ bản về Database/SQL trong GeeORM 👉 Mã nguồn đầy đủ trên GitHub Đây là bài viết đầu tiên trong loạt bài hướng dẫn xây dựng ORM framework GeeORM từ đầu bằng Go trong 7 ngày. Mục tiêu của bài viết này Tìm hiểu các thao tác cơ...
+        </description>
+        <pubDate>Mon, 02 Jun 2025 14:30:00 +0200</pubDate>
+        <link>http://localhost:4000/2025/06/02/build-your-own-x-orm-framework-in-go-part-1-vi.html</link>
+        <guid isPermaLink="true">http://localhost:4000/2025/06/02/build-your-own-x-orm-framework-in-go-part-1-vi.html</guid>
+      </item>
+    
+      <item>
+        <title>Build your own X: Tự xây dựng một ORM framework với Go - Giới thiệu</title>
+        <description>
+          
+          Triển khai ORM framework GeeORM từ đầu bằng Go trong 7 ngày Sau khi hoàn thành xong chuỗi bài viết về xây dựng web framework, tôi tiếp tục dịch và chia sẻ một chuỗi bài viết mới từ blog geektutu.com - lần này về việc xây dựng một ORM framework...
+        </description>
+        <pubDate>Wed, 28 May 2025 23:30:00 +0200</pubDate>
+        <link>http://localhost:4000/2025/05/28/build-your-own-x-orm-framework-in-go-introduce-vi.html</link>
+        <guid isPermaLink="true">http://localhost:4000/2025/05/28/build-your-own-x-orm-framework-in-go-introduce-vi.html</guid>
+      </item>
+    
+      <item>
+        <title>Build your own X: Tự xây dựng một web framework với Go - Phần 7</title>
+        <description>
+          
+          Phần 7: Xử lý lỗi và phục hồi từ panic trong Gee Framework 👉 Mã nguồn đầy đủ trên GitHub Bài viết này là phần thứ bảy (cũng là phần cuối cùng) trong chuỗi bài về việc xây dựng web framework Gee từ đầu bằng ngôn ngữ Go. Triển khai...
+        </description>
+        <pubDate>Mon, 26 May 2025 22:30:00 +0200</pubDate>
+        <link>http://localhost:4000/2025/05/26/build-your-own-x-web-framework-in-go-part-8-vi.html</link>
+        <guid isPermaLink="true">http://localhost:4000/2025/05/26/build-your-own-x-web-framework-in-go-part-8-vi.html</guid>
+      </item>
+    
+      <item>
+        <title>Build your own X: Tự xây dựng web framework với Go - Phần 6</title>
+        <description>
+          
+          Phần 6: Phục vụ tài nguyên tĩnh và Render Template HTML 👉 Mã nguồn đầy đủ trên GitHub Đây là bài viết thứ sáu trong loạt bài hướng dẫn xây dựng web framework Gee từ đầu bằng Go trong 7 ngày. Mục tiêu của bài viết này Triển khai phục...
+        </description>
+        <pubDate>Fri, 23 May 2025 20:24:00 +0200</pubDate>
+        <link>http://localhost:4000/2025/05/23/build-your-own-x-web-framework-in-go-part-7-vi.html</link>
+        <guid isPermaLink="true">http://localhost:4000/2025/05/23/build-your-own-x-web-framework-in-go-part-7-vi.html</guid>
+      </item>
+    
+      <item>
+        <title>Build your own X: Tự xây dựng web framework với Go - Phần 5</title>
+        <description>
+          
+          Phần 5: Triển khai cơ chế Middleware trong Gee Framework 👉 Mã nguồn đầy đủ trên GitHub Đây là bài viết thứ năm trong loạt bài hướng dẫn xây dựng web framework Gee từ đầu bằng Go trong 7 ngày. Mục tiêu của bài viết này Thiết kế và triển...
+        </description>
+        <pubDate>Thu, 22 May 2025 20:30:00 +0200</pubDate>
+        <link>http://localhost:4000/2025/05/22/build-your-own-x-web-framework-in-go-part-6-vi.html</link>
+        <guid isPermaLink="true">http://localhost:4000/2025/05/22/build-your-own-x-web-framework-in-go-part-6-vi.html</guid>
+      </item>
+    
+      <item>
+        <title>Build your own X: Tự xây dựng một web framework với Go - Phần 4</title>
+        <description>
+          
+          Phần 4: Triển khai Route Group Control trong Gee Framework 👉 Mã nguồn đầy đủ trên GitHub Đây là bài viết thứ tư trong loạt bài hướng dẫn xây dựng web framework Gee từ đầu bằng Go trong 7 ngày. Tại sao cần Route Group Control? Route Group Control là...
+        </description>
+        <pubDate>Mon, 19 May 2025 21:26:00 +0200</pubDate>
+        <link>http://localhost:4000/2025/05/19/build-your-own-x-web-framework-in-go-part-5-vi.html</link>
+        <guid isPermaLink="true">http://localhost:4000/2025/05/19/build-your-own-x-web-framework-in-go-part-5-vi.html</guid>
+      </item>
+    
+      <item>
+        <title>Build your own X: Tự xây dựng một web framework với Go - Phần 3</title>
+        <description>
+          
+          Phần 3: Định Tuyến Router bằng Cây Tiền Tố (Prefix Tree) 👉 Mã nguồn đầy đủ trên GitHub Đây là bài viết thứ ba trong loạt bài hướng dẫn xây dựng web framework Gee từ đầu bằng Go trong 7 ngày. Trong bài này, chúng ta sẽ học cách triển...
+        </description>
+        <pubDate>Tue, 13 May 2025 23:58:00 +0200</pubDate>
+        <link>http://localhost:4000/2025/05/13/build-your-own-x-web-framework-in-go-part-4-vi.html</link>
+        <guid isPermaLink="true">http://localhost:4000/2025/05/13/build-your-own-x-web-framework-in-go-part-4-vi.html</guid>
+      </item>
+    
+      <item>
+        <title>Build your own X: Tự xây dựng một web framework với Go - Phần 2</title>
+        <description>
+          
+          Phần 2: Thiết kế Context trong Web Framework Gee 👉 Mã nguồn đầy đủ trên GitHub Đây là bài viết thứ hai trong loạt bài hướng dẫn xây dựng web framework Gee bằng ngôn ngữ Go trong 7 ngày. Mục tiêu hôm nay Tách riêng module router để dễ mở...
+        </description>
+        <pubDate>Fri, 09 May 2025 23:58:00 +0200</pubDate>
+        <link>http://localhost:4000/2025/05/09/build-your-own-x-web-framework-in-go-part-3-vi.html</link>
+        <guid isPermaLink="true">http://localhost:4000/2025/05/09/build-your-own-x-web-framework-in-go-part-3-vi.html</guid>
+      </item>
+    
+      <item>
+        <title>Build your own X: Tự xây dựng một web framework với Go - Phần 1</title>
+        <description>
+          
+          Phần 1: Bắt đầu xây dựng Web Framework với Go - Giới thiệu http.Handler Sau khi đọc và làm theo bài viết đầu tiên trong series “7 ngày xây dựng Web Framework bằng Go” từ blog geektutu.com, mình muốn chia sẻ lại những gì đã học được, kèm theo phần...
+        </description>
+        <pubDate>Thu, 01 May 2025 23:58:00 +0200</pubDate>
+        <link>http://localhost:4000/2025/05/01/build-your-own-x-web-framework-in-go-part-2-vi.html</link>
+        <guid isPermaLink="true">http://localhost:4000/2025/05/01/build-your-own-x-web-framework-in-go-part-2-vi.html</guid>
       </item>
     
   </channel>
