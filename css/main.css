@@ -885,13 +885,21 @@ td.gutter {
   text-decoration: none;
 }
 
-.language-switcher-link .current-lang {
+.language-switcher-link .current-lang,
+.language-switcher-link .other-lang {
+  transition: color 0.3s ease;
+}
+
+.language-switcher-link .current-lang.active,
+.language-switcher-link .other-lang.active {
   color: #0085a1;
   font-weight: 800;
 }
 
-.language-switcher-link .other-lang {
+.language-switcher-link .current-lang:not(.active),
+.language-switcher-link .other-lang:not(.active) {
   color: #808080;
+  font-weight: 400;
 }
 
 /* Mobile responsive */

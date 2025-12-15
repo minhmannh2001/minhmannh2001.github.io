@@ -3,16 +3,17 @@
   For posts: switches to other language version if available
   For other pages: sets language preference for filtering
 {% endcomment %}
-{% assign current_lang = 'vi' %}
-{% assign show_switcher = true %}
+{% assign detected_lang = 'vi' %}
+{% assign other_version_url = '' %}
+{% assign has_specific_link = false %}
 
 {% comment %} Detect current language from page path {% endcomment %}
 {% if page.path %}
   {% assign filename = page.path | split: '/' | last %}
   {% if filename contains '-en.markdown' or filename contains '-en.md' %}
-    {% assign current_lang = 'en' %}
+    {% assign detected_lang = 'en' %}
   {% elsif filename contains '-vi.markdown' or filename contains '-vi.md' %}
-    {% assign current_lang = 'vi' %}
+    {% assign detected_lang = 'vi' %}
   {% endif %}
 {% endif %}
 
@@ -24,25 +25,23 @@
   {% assign base_name_without_lang = '' %}
   
   {% if filename contains '-en.markdown' %}
-    {% assign current_lang = 'en' %}
+    {% assign detected_lang = 'en' %}
     {% assign base_name_without_lang = filename | replace: '-en.markdown', '' %}
     {% assign other_lang = 'vi' %}
   {% elsif filename contains '-en.md' %}
-    {% assign current_lang = 'en' %}
+    {% assign detected_lang = 'en' %}
     {% assign base_name_without_lang = filename | replace: '-en.md', '' %}
     {% assign other_lang = 'vi' %}
   {% elsif filename contains '-vi.markdown' %}
-    {% assign current_lang = 'vi' %}
+    {% assign detected_lang = 'vi' %}
     {% assign base_name_without_lang = filename | replace: '-vi.markdown', '' %}
     {% assign other_lang = 'en' %}
   {% elsif filename contains '-vi.md' %}
-    {% assign current_lang = 'vi' %}
+    {% assign detected_lang = 'vi' %}
     {% assign base_name_without_lang = filename | replace: '-vi.md', '' %}
     {% assign other_lang = 'en' %}
   {% endif %}
   
-  {% assign other_version_exists = false %}
-  {% assign other_version_url = '' %}
   {% if base_name_without_lang != '' %}
     {% comment %} First check site.posts (for actual posts) {% endcomment %}
     {% for post in site.posts %}
@@ -70,7 +69,7 @@
         {% endif %}
         
         {% if post_lang == other_lang %}
-          {% assign other_version_exists = true %}
+          {% assign has_specific_link = true %}
           {% assign other_version_url = post.url | prepend: site.baseurl | replace: '//', '/' %}
           {% break %}
         {% endif %}
@@ -78,7 +77,7 @@
     {% endfor %}
     
     {% comment %} If not found in posts, check site.pages (for pages using post layout) {% endcomment %}
-    {% unless other_version_exists %}
+    {% unless has_specific_link %}
       {% for site_page in site.pages %}
         {% assign page_path_parts = site_page.path | split: '/' %}
         {% assign page_filename = page_path_parts | last %}
@@ -100,7 +99,7 @@
           {% endif %}
           
           {% if page_lang == other_lang %}
-            {% assign other_version_exists = true %}
+            {% assign has_specific_link = true %}
             {% if site_page.permalink %}
               {% assign other_version_url = site_page.permalink | prepend: site.baseurl | replace: '//', '/' %}
             {% else %}
@@ -112,21 +111,6 @@
       {% endfor %}
     {% endunless %}
   {% endif %}
-  
-  {% if other_version_exists %}
-    <li class="language-switcher-nav">
-      <a href="{{ other_version_url }}" class="language-switcher-link" data-lang-switch="true" title="Switch to {% if current_lang == 'en' %}Vietnamese{% else %}English{% endif %}">
-        <span class="current-lang">{% if current_lang == 'en' %}EN{% else %}VI{% endif %}</span> / <span class="other-lang">{% if current_lang == 'en' %}VI{% else %}EN{% endif %}</span>
-      </a>
-    </li>
-  {% else %}
-    {% comment %} Show language selector even if no other version exists {% endcomment %}
-    <li class="language-switcher-nav">
-      <a href="#" class="language-switcher-link" data-lang-selector="true" data-current-lang="{{ current_lang }}" title="Select language">
-        <span class="current-lang">{% if current_lang == 'en' %}EN{% else %}VI{% endif %}</span> / <span class="other-lang">{% if current_lang == 'en' %}VI{% else %}EN{% endif %}</span>
-      </a>
-    </li>
-  {% endif %}
 {% else %}
   {% comment %} For non-post pages, check if other language version exists {% endcomment %}
   {% assign page_filename = page.path | split: '/' | last %}
@@ -134,44 +118,43 @@
   {% assign page_other_lang = '' %}
   
   {% if page_filename contains '-en.md' %}
-    {% assign current_lang = 'en' %}
+    {% assign detected_lang = 'en' %}
     {% assign page_base_name = page_filename | replace: '-en.md', '' %}
     {% assign page_other_lang = 'vi' %}
   {% elsif page_filename contains '-vi.md' %}
-    {% assign current_lang = 'vi' %}
+    {% assign detected_lang = 'vi' %}
     {% assign page_base_name = page_filename | replace: '-vi.md', '' %}
     {% assign page_other_lang = 'en' %}
   {% endif %}
   
-  {% assign page_other_version_exists = false %}
-  {% assign page_other_version_url = '' %}
   {% if page_base_name != '' and page_other_lang != '' %}
     {% assign other_page_filename = page_base_name | append: '-' | append: page_other_lang | append: '.md' %}
     {% for site_page in site.pages %}
       {% comment %} Check both by path and by permalink {% endcomment %}
       {% if site_page.path == other_page_filename or site_page.path contains other_page_filename %}
-        {% assign page_other_version_exists = true %}
+        {% assign has_specific_link = true %}
         {% if site_page.permalink %}
-          {% assign page_other_version_url = site_page.permalink | prepend: site.baseurl | replace: '//', '/' %}
+          {% assign other_version_url = site_page.permalink | prepend: site.baseurl | replace: '//', '/' %}
         {% else %}
-          {% assign page_other_version_url = site_page.url | prepend: site.baseurl | replace: '//', '/' %}
+          {% assign other_version_url = site_page.url | prepend: site.baseurl | replace: '//', '/' %}
         {% endif %}
         {% break %}
       {% endif %}
     {% endfor %}
   {% endif %}
-  
-  {% if page_other_version_exists %}
-    <li class="language-switcher-nav">
-      <a href="{{ page_other_version_url }}" class="language-switcher-link" data-lang-switch="true" title="Switch to {% if current_lang == 'en' %}Vietnamese{% else %}English{% endif %}">
-        <span class="current-lang">{% if current_lang == 'en' %}EN{% else %}VI{% endif %}</span> / <span class="other-lang">{% if current_lang == 'en' %}VI{% else %}EN{% endif %}</span>
-      </a>
-    </li>
-  {% else %}
-    <li class="language-switcher-nav">
-      <a href="#" class="language-switcher-link" data-lang-selector="true" data-current-lang="{{ current_lang }}" title="Select language">
-        <span class="current-lang">{% if current_lang == 'en' %}EN{% else %}VI{% endif %}</span> / <span class="other-lang">{% if current_lang == 'en' %}VI{% else %}EN{% endif %}</span>
-      </a>
-    </li>
-  {% endif %}
+{% endif %}
+
+{% comment %} Always show language switcher {% endcomment %}
+{% if has_specific_link %}
+  <li class="language-switcher-nav">
+    <a href="{{ other_version_url }}" class="language-switcher-link" data-lang-switch="true" data-current-lang="{{ detected_lang }}" title="Switch to {% if detected_lang == 'en' %}Vietnamese{% else %}English{% endif %}">
+      <span class="current-lang">{% if detected_lang == 'en' %}EN{% else %}VI{% endif %}</span> / <span class="other-lang">{% if detected_lang == 'en' %}VI{% else %}EN{% endif %}</span>
+    </a>
+  </li>
+{% else %}
+  <li class="language-switcher-nav">
+    <a href="#" class="language-switcher-link" data-lang-selector="true" data-current-lang="{{ detected_lang }}" title="Select language">
+      <span class="current-lang">{% if detected_lang == 'en' %}EN{% else %}VI{% endif %}</span> / <span class="other-lang">{% if detected_lang == 'en' %}VI{% else %}EN{% endif %}</span>
+    </a>
+  </li>
 {% endif %}

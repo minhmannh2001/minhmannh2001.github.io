@@ -9,7 +9,8 @@ redirect: true
   // Redirect to the correct language version based on preference
   (function() {
     var preferredLang = localStorage.getItem('siteLanguage') || 'vi';
-    var targetUrl = preferredLang === 'en' ? '/openlearning-en.html' : '/openlearning-vi.html';
+    var baseUrl = window.location.origin + (window.location.pathname.includes('/minhmannh2001.github.io') ? '/minhmannh2001.github.io' : '');
+    var targetUrl = baseUrl + (preferredLang === 'en' ? '/openlearning-en.html' : '/openlearning-vi.html');
     window.location.href = targetUrl;
   })();
 </script>

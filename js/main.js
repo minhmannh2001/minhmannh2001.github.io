@@ -177,84 +177,98 @@ var main = {
       }
     };
     
+    // Update language switcher display and highlight current language
+    var updateLanguageSwitcher = function(lang) {
+      $('.language-switcher-link').each(function() {
+        var $current = $(this).find('.current-lang');
+        var $other = $(this).find('.other-lang');
+        var $link = $(this);
+        
+        // Remove previous highlighting
+        $current.removeClass('active');
+        $other.removeClass('active');
+        
+        if (lang === 'en') {
+          $current.text('EN');
+          $other.text('VI');
+          $current.addClass('active');
+        } else {
+          $current.text('VI');
+          $other.text('EN');
+          $current.addClass('active');
+        }
+        $link.attr('data-current-lang', lang);
+      });
+    };
+    
+    // Detect current page language from URL
+    var detectPageLanguage = function() {
+      var currentPath = window.location.pathname;
+      var pageMatch = currentPath.match(/(aboutme|openlearning)-(\w+)\.html$/);
+      if (pageMatch) {
+        return pageMatch[2]; // 'en' or 'vi'
+      }
+      // Check for post URLs
+      var postMatch = currentPath.match(/-(\w+)\.html$/);
+      if (postMatch && (postMatch[1] === 'en' || postMatch[1] === 'vi')) {
+        return postMatch[1];
+      }
+      return null;
+    };
+    
     // Handle language selector clicks
     $(document).on('click', '.language-switcher-link[data-lang-selector="true"]', function(e) {
       e.preventDefault();
-      var currentLang = $(this).attr('data-current-lang') || 'vi';
+      var currentLang = $(this).attr('data-current-lang') || getLanguagePreference();
       var newLang = currentLang === 'en' ? 'vi' : 'en';
       
       // Update preference
       setLanguagePreference(newLang);
       
-      // Filter posts
+      // Filter posts on home page
       filterPosts(newLang);
       
-      // Update all language switchers on the page
-      $('.language-switcher-link[data-lang-selector="true"]').each(function() {
-        var $current = $(this).find('.current-lang');
-        var $other = $(this).find('.other-lang');
-        if (newLang === 'en') {
-          $current.text('EN');
-          $other.text('VI');
-        } else {
-          $current.text('VI');
-          $other.text('EN');
-        }
-        $(this).attr('data-current-lang', newLang);
-      });
-    });
-    
-    // Apply language filter on page load
-    var preferredLang = getLanguagePreference();
-    filterPosts(preferredLang);
-    
-    // Update language switcher display based on preference
-    $('.language-switcher-link[data-lang-selector="true"]').each(function() {
-      var $current = $(this).find('.current-lang');
-      var $other = $(this).find('.other-lang');
-      if (preferredLang === 'en') {
-        $current.text('EN');
-        $other.text('VI');
-      } else {
-        $current.text('VI');
-        $other.text('EN');
-      }
-      $(this).attr('data-current-lang', preferredLang);
-    });
-    
-    // Handle page language switching - redirect to correct version if needed
-    var handlePageLanguage = function() {
-      var currentPath = window.location.pathname;
-      var preferredLang = getLanguagePreference();
+      // Update all language switchers
+      updateLanguageSwitcher(newLang);
       
-      // Check if we're on a page with language suffix
-      var pageMatch = currentPath.match(/(aboutme|openlearning)-(\w+)\.html$/);
-      if (pageMatch) {
-        var pageName = pageMatch[1];
-        var currentPageLang = pageMatch[2];
-        
-        // If current page language doesn't match preference, redirect
-        if (currentPageLang !== preferredLang) {
-          var newPath = currentPath.replace('-' + currentPageLang + '.html', '-' + preferredLang + '.html');
-          // Check if the other language version exists before redirecting
-          // We'll let the user manually switch to avoid redirect loops
-        }
-      } else {
-        // If on a page without language suffix, check if we should redirect
-        // This handles cases where user navigates to base page
-        if (currentPath.includes('/aboutme') || currentPath.includes('/openlearning')) {
-          // Try to find the preferred language version
-          var basePath = currentPath.replace(/\.html$/, '');
-          var preferredPath = basePath + '-' + preferredLang + '.html';
-          // Don't auto-redirect, let user choose
+      // Handle page redirects for aboutme and openlearning
+      var currentPath = window.location.pathname;
+      if (currentPath.includes('/aboutme') || currentPath.includes('/openlearning')) {
+        var pageMatch = currentPath.match(/(aboutme|openlearning)(?:-(\w+))?\.html$/);
+        if (pageMatch) {
+          var pageName = pageMatch[1];
+          var newPath = '/' + pageName + '-' + newLang + '.html';
+          window.location.href = newPath;
+          return;
         }
       }
-    };
+    });
     
-    // Only run on pages (not posts or index)
-    if (document.querySelector('.page-content') || document.body.classList.contains('page')) {
-      // Don't auto-redirect, just update the switcher
+    // Handle language switch links (for posts/pages with both versions)
+    $(document).on('click', '.language-switcher-link[data-lang-switch="true"]', function(e) {
+      // Let the link work normally, but also update preference
+      var href = $(this).attr('href');
+      var targetLang = (href.includes('-en.html') || href.includes('-en/')) ? 'en' : 'vi';
+      setLanguagePreference(targetLang);
+      // Link will navigate, so preference is saved for next page
+    });
+    
+    // Detect current page language and update preference
+    var detectedLang = detectPageLanguage();
+    var preferredLang = getLanguagePreference();
+    
+    if (detectedLang) {
+      // If we're on a language-specific page, use that language
+      setLanguagePreference(detectedLang);
+      updateLanguageSwitcher(detectedLang);
+      preferredLang = detectedLang;
+    } else {
+      // Use stored preference or default
+      updateLanguageSwitcher(preferredLang);
     }
+    
+    // Apply language filter on home page
+    filterPosts(preferredLang);
   }
 };
 
