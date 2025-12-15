@@ -863,3 +863,57 @@ td.gutter {
   color: #808080;
   margin-bottom: 10px;
 }
+
+/* --- Language Switcher --- */
+
+.language-switcher-container {
+  text-align: right;
+  margin-bottom: 20px;
+  margin-top: 10px;
+}
+
+.language-switcher-btn {
+  display: inline-block;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  color: #404040;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+  font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  text-decoration: none;
+}
+
+.language-switcher-btn:hover {
+  background-color: #f5f5f5;
+  border-color: #0085a1;
+  color: #0085a1;
+  text-decoration: none;
+}
+
+.language-switcher-btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(0, 133, 161, 0.2);
+  text-decoration: none;
+}
+
+.language-switcher-btn:visited {
+  color: #404040;
+  text-decoration: none;
+}
+
+.language-switcher-btn:hover:visited {
+  color: #0085a1;
+}
+
+.language-switcher-btn #current-lang {
+  color: #0085a1;
+  font-weight: 700;
+}
+
+.language-switcher-btn #other-lang {
+  color: #808080;
+}

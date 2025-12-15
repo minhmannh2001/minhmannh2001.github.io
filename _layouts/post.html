@@ -31,6 +31,60 @@ layout: base
         </div>
       {% endif %}
       
+      <!-- Language Switcher -->
+      {% assign current_path = page.path %}
+      {% assign filename = current_path | split: '/' | last %}
+      
+      {% comment %} Extract base name and current language {% endcomment %}
+      {% assign current_lang = '' %}
+      {% assign other_lang = '' %}
+      {% assign base_name = '' %}
+      {% assign other_filename = '' %}
+      
+      {% if filename contains '.en.markdown' %}
+        {% assign current_lang = 'en' %}
+        {% assign base_name = filename | replace: '.en.markdown', '' %}
+        {% assign other_lang = 'vi' %}
+        {% assign other_filename = base_name | append: '.vi.markdown' %}
+      {% elsif filename contains '.en.md' %}
+        {% assign current_lang = 'en' %}
+        {% assign base_name = filename | replace: '.en.md', '' %}
+        {% assign other_lang = 'vi' %}
+        {% assign other_filename = base_name | append: '.vi.md' %}
+      {% elsif filename contains '.vi.markdown' %}
+        {% assign current_lang = 'vi' %}
+        {% assign base_name = filename | replace: '.vi.markdown', '' %}
+        {% assign other_lang = 'en' %}
+        {% assign other_filename = base_name | append: '.en.markdown' %}
+      {% elsif filename contains '.vi.md' %}
+        {% assign current_lang = 'vi' %}
+        {% assign base_name = filename | replace: '.vi.md', '' %}
+        {% assign other_lang = 'en' %}
+        {% assign other_filename = base_name | append: '.en.md' %}
+      {% endif %}
+      
+      {% comment %} Check if other language version exists {% endcomment %}
+      {% assign other_version_exists = false %}
+      {% assign other_version_url = '' %}
+      {% if other_filename != '' %}
+        {% for post in site.posts %}
+          {% assign post_filename = post.path | split: '/' | last %}
+          {% if post_filename == other_filename %}
+            {% assign other_version_exists = true %}
+            {% assign other_version_url = post.url | prepend: site.baseurl | replace: '//', '/' %}
+            {% break %}
+          {% endif %}
+        {% endfor %}
+      {% endif %}
+      
+      {% if other_version_exists %}
+      <div id="language-switcher" class="language-switcher-container">
+        <a href="{{ other_version_url }}" id="lang-switch-btn" class="btn btn-default language-switcher-btn">
+          <span id="current-lang">{% if current_lang == 'en' %}EN{% else %}VI{% endif %}</span> / <span id="other-lang">{% if current_lang == 'en' %}VI{% else %}EN{% endif %}</span>
+        </a>
+      </div>
+      {% endif %}
+      
       <article role="main" class="blog-post">
         {{ content }}
       </article>
