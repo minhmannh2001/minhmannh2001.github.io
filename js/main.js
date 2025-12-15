@@ -146,10 +146,22 @@ var main = {
     };
     
     // Filter posts based on language
-    var filterPosts = function(lang) {
+    var filterPosts = function(lang, isInitialLoad) {
       var posts = document.querySelectorAll('.post-preview');
       var visibleCount = 0;
+      var hiddenCount = 0;
+      var hasMultipleLanguages = false;
       
+      // Check if there are posts in multiple languages on this page
+      var languagesFound = new Set();
+      posts.forEach(function(post) {
+        var postLang = post.getAttribute('data-post-lang') || 'vi';
+        languagesFound.add(postLang);
+      });
+      hasMultipleLanguages = languagesFound.size > 1;
+      
+      // Always filter based on language preference
+      // Show/hide posts based on language
       posts.forEach(function(post) {
         var postLang = post.getAttribute('data-post-lang');
         if (postLang === lang || !postLang) {
@@ -157,8 +169,44 @@ var main = {
           visibleCount++;
         } else {
           post.style.display = 'none';
+          hiddenCount++;
         }
       });
+      
+      // Handle pagination - check if there are more posts in selected language
+      var pager = document.getElementById('post-pager');
+      if (pager) {
+        if (hiddenCount > 0) {
+          // We're filtering - temporarily hide pagination while checking
+          pager.style.display = 'none';
+          
+          // Check if there are more posts in selected language on next/previous pages
+          checkPaginationForLanguage(lang, function(hasMorePosts, hasPreviousPosts) {
+            if (pager) {
+              var nextLink = pager.querySelector('.next');
+              var prevLink = pager.querySelector('.previous');
+              
+              // Show pagination container if either button should be visible
+              if (hasMorePosts || hasPreviousPosts) {
+                pager.style.display = '';
+                
+                // Show/hide individual buttons
+                if (nextLink) {
+                  nextLink.style.display = hasMorePosts ? '' : 'none';
+                }
+                if (prevLink) {
+                  prevLink.style.display = hasPreviousPosts ? '' : 'none';
+                }
+              } else {
+                pager.style.display = 'none';
+              }
+            }
+          });
+        } else {
+          // No filtering (all posts visible) - show pagination as normal
+          pager.style.display = '';
+        }
+      }
       
       // Show message if no posts found
       var postsList = document.querySelector('.posts-list');
@@ -174,6 +222,115 @@ var main = {
         noPostsMsg.style.display = 'block';
       } else if (noPostsMsg) {
         noPostsMsg.style.display = 'none';
+      }
+    };
+    
+    // Check if there are more posts in the selected language on next/previous pages
+    var checkPaginationForLanguage = function(lang, callback) {
+      var pager = document.getElementById('post-pager');
+      if (!pager) {
+        callback(false, false);
+        return;
+      }
+      
+      var nextPageLink = pager.querySelector('.next a');
+      var prevPageLink = pager.querySelector('.previous a');
+      
+      var hasMorePosts = false;
+      var hasPreviousPosts = false;
+      var checksCompleted = 0;
+      var totalChecks = (nextPageLink ? 1 : 0) + (prevPageLink ? 1 : 0);
+      
+      if (totalChecks === 0) {
+        callback(false, false);
+        return;
+      }
+      
+      var checkComplete = function() {
+        checksCompleted++;
+        if (checksCompleted === totalChecks) {
+          callback(hasMorePosts, hasPreviousPosts);
+        }
+      };
+      
+      // Check next page
+      if (nextPageLink) {
+        var nextPageUrl = nextPageLink.getAttribute('href');
+        if (nextPageUrl) {
+          // Make absolute URL if needed
+          if (nextPageUrl.startsWith('/')) {
+            nextPageUrl = window.location.origin + nextPageUrl;
+          } else if (!nextPageUrl.startsWith('http')) {
+            nextPageUrl = window.location.origin + '/' + nextPageUrl;
+          }
+          
+          fetch(nextPageUrl)
+            .then(function(response) {
+              return response.text();
+            })
+            .then(function(html) {
+              // Parse the HTML to count posts in the selected language
+              var parser = new DOMParser();
+              var doc = parser.parseFromString(html, 'text/html');
+              var nextPagePosts = doc.querySelectorAll('.post-preview[data-post-lang="' + lang + '"]');
+              
+              // Also count posts without data-post-lang (default to 'vi')
+              var postsWithoutLang = doc.querySelectorAll('.post-preview:not([data-post-lang])');
+              var count = nextPagePosts.length;
+              if (lang === 'vi') {
+                count += postsWithoutLang.length;
+              }
+              
+              hasMorePosts = count > 0;
+              checkComplete();
+            })
+            .catch(function(error) {
+              console.error('Error checking next page:', error);
+              checkComplete();
+            });
+        } else {
+          checkComplete();
+        }
+      }
+      
+      // Check previous page
+      if (prevPageLink) {
+        var prevPageUrl = prevPageLink.getAttribute('href');
+        if (prevPageUrl) {
+          // Make absolute URL if needed
+          if (prevPageUrl.startsWith('/')) {
+            prevPageUrl = window.location.origin + prevPageUrl;
+          } else if (!prevPageUrl.startsWith('http')) {
+            prevPageUrl = window.location.origin + '/' + prevPageUrl;
+          }
+          
+          fetch(prevPageUrl)
+            .then(function(response) {
+              return response.text();
+            })
+            .then(function(html) {
+              // Parse the HTML to count posts in the selected language
+              var parser = new DOMParser();
+              var doc = parser.parseFromString(html, 'text/html');
+              var prevPagePosts = doc.querySelectorAll('.post-preview[data-post-lang="' + lang + '"]');
+              
+              // Also count posts without data-post-lang (default to 'vi')
+              var postsWithoutLang = doc.querySelectorAll('.post-preview:not([data-post-lang])');
+              var count = prevPagePosts.length;
+              if (lang === 'vi') {
+                count += postsWithoutLang.length;
+              }
+              
+              hasPreviousPosts = count > 0;
+              checkComplete();
+            })
+            .catch(function(error) {
+              console.error('Error checking previous page:', error);
+              checkComplete();
+            });
+        } else {
+          checkComplete();
+        }
       }
     };
     
@@ -226,7 +383,7 @@ var main = {
       setLanguagePreference(newLang);
       
       // Filter posts on home page
-      filterPosts(newLang);
+      filterPosts(newLang, false);
       
       // Update all language switchers
       updateLanguageSwitcher(newLang);
@@ -268,7 +425,7 @@ var main = {
     }
     
     // Apply language filter on home page
-    filterPosts(preferredLang);
+    filterPosts(preferredLang, true);
   }
 };
 

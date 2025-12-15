@@ -66,7 +66,7 @@ use-site-title: true
 </div>
 
 {% if paginator.total_pages > 1 %}
-<ul class="pager main-pager">
+<ul class="pager main-pager" id="post-pager">
   {% if paginator.previous_page %}
   <li class="previous">
     <a href="{{ paginator.previous_page_path | prepend: site.baseurl | replace: '//', '/' }}">&larr; Newer Posts</a>
