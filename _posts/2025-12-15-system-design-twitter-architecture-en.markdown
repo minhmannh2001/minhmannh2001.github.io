@@ -18,9 +18,9 @@ Recently, I watched an excellent YouTube video about designing a Twitter-like sy
 
 # High-Level Architecture of a Twitter-like System
 
-![High-Level Twitter Architecture](/img/system-degisn/twitter-architecture/twitter-architecture.png)
+![High-Level Twitter Architecture](/img/system-design/twitter-architecture/twitter-architecture.png)
 
-Hello there! Ever wondered what it takes to run a massive social network like Twitter? It might seem simple on the surface—you post a thought, follow some friends, and scroll through a feed. But behind that smooth experience is a fascinating and complex engineering puzzle.
+Ever wondered what it takes to run a massive social network like Twitter? It might seem simple on the surface—you post a thought, follow some friends, and scroll through a feed. But behind that smooth experience is a fascinating and complex engineering puzzle.
 
 Our goal here is to peek behind the curtain and understand the high-level architecture of such a system. We won't get lost in the weeds, but by the end, you'll have a solid grasp of the core concepts.
 
