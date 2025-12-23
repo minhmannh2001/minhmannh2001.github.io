@@ -38,11 +38,29 @@
 
 {% comment %} Determine language status {% endcomment %}
 {% assign lang_status = "single" %}
+{% assign single_lang = "" %}
 {% if posts_with_both == total_posts %}
   {% assign lang_status = "all" %}
 {% elsif posts_with_both > 0 and posts_with_both < total_posts %}
   {% assign lang_status = "mixed" %}
 {% else %}
   {% assign lang_status = "single" %}
+  {% comment %} Determine which single language {% endcomment %}
+  {% assign vi_count = 0 %}
+  {% assign en_count = 0 %}
+  {% for post_url in include.series.posts %}
+    {% if post_url contains '-vi' %}
+      {% assign vi_count = vi_count | plus: 1 %}
+    {% elsif post_url contains '-en' %}
+      {% assign en_count = en_count | plus: 1 %}
+    {% else %}
+      {% assign vi_count = vi_count | plus: 1 %}
+    {% endif %}
+  {% endfor %}
+  {% if vi_count > en_count %}
+    {% assign single_lang = "vi" %}
+  {% else %}
+    {% assign single_lang = "en" %}
+  {% endif %}
 {% endif %}
 

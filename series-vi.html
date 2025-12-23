@@ -19,8 +19,10 @@ lang: vi
             <span class="series-lang-badge lang-all">Có cả tiếng Việt và tiếng Anh</span>
           {% elsif lang_status == "mixed" %}
             <span class="series-lang-badge lang-mixed">Một số bài có cả 2 ngôn ngữ</span>
+          {% elsif single_lang == "vi" %}
+            <span class="series-lang-badge lang-single">Chỉ có bài viết Tiếng Việt</span>
           {% else %}
-            <span class="series-lang-badge lang-single">Chỉ một ngôn ngữ</span>
+            <span class="series-lang-badge lang-single">Chỉ có bài viết Tiếng Anh</span>
           {% endif %}
         </div>
       </div>

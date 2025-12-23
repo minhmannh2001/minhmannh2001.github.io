@@ -31,8 +31,10 @@ redirect: true
             <span class="series-lang-badge lang-all">Có cả tiếng Việt và tiếng Anh / Both Vietnamese and English</span>
           {% elsif lang_status == "mixed" %}
             <span class="series-lang-badge lang-mixed">Một số bài có cả 2 ngôn ngữ / Some posts have both languages</span>
+          {% elsif single_lang == "vi" %}
+            <span class="series-lang-badge lang-single">Chỉ có bài viết Tiếng Việt / Only Vietnamese posts</span>
           {% else %}
-            <span class="series-lang-badge lang-single">Chỉ một ngôn ngữ / Single language only</span>
+            <span class="series-lang-badge lang-single">Only English posts / Chỉ có bài viết Tiếng Anh</span>
           {% endif %}
         </div>
       </div>

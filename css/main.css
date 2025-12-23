@@ -1123,3 +1123,44 @@ td.gutter {
     font-size: 20px;
   }
 }
+
+/* Language filter info */
+.language-filter-info {
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  padding: 15px 20px;
+  margin: 20px 0 30px 0;
+  font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  color: #404040;
+}
+
+.language-filter-info p {
+  margin: 0;
+}
+
+.language-filter-info strong {
+  color: #008AFF;
+  font-weight: 600;
+}
+
+.language-filter-info .show-all-posts {
+  color: #008AFF;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.language-filter-info .show-all-posts:hover {
+  text-decoration: underline;
+  color: #0085a1;
+}
+
+@media (max-width: 767px) {
+  .language-filter-info {
+    padding: 12px 15px;
+    font-size: 14px;
+    margin: 15px 0 20px 0;
+  }
+}

@@ -28,5 +28,15 @@
       "/2025/06/14/build-your-own-x-orm-framework-in-go-part-6",
       "/2025/06/17/build-your-own-x-orm-framework-in-go-part-7"
     ]
+  },
+  {
+    "slug": "system-design-series",
+    "name": "System Design Series",
+    "description": "Exploring the architecture behind large-scale distributed systems. Learn about load balancers, caching strategies, database sharding, CDNs, and the fascinating engineering challenges of building systems that handle billions of requests daily.",
+    "posts": [
+      "/2025/12/15/system-design-twitter-architecture-en",
+      "/2025/12/19/system-design-youtube-architecture-en",
+      "/2025/12/25/system-design-web-search-engine-architecture-en"
+    ]
   }
 ]

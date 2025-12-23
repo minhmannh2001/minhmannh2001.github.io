@@ -5,6 +5,125 @@ subtitle: Nơi lưu trữ, chia sẻ kinh nghiệm, kiến thức của bản th
 use-site-title: true
 ---
 
+<script>
+  // Update subtitle based on language preference
+  function updateSubtitle() {
+    var preferredLang = localStorage.getItem('siteLanguage') || 'vi';
+    var subtitleElement = document.querySelector('.page-subheading');
+    if (subtitleElement) {
+      if (preferredLang === 'en') {
+        subtitleElement.textContent = 'A place to store and share personal experiences and knowledge';
+      } else {
+        subtitleElement.textContent = 'Nơi lưu trữ, chia sẻ kinh nghiệm, kiến thức của bản thân mình';
+      }
+    }
+  }
+  
+  // Update on page load
+  document.addEventListener('DOMContentLoaded', function() {
+    updateSubtitle();
+    
+    // Update language filter info immediately
+    updateLanguageFilterInfo();
+    
+    // Listen for language changes (when language switcher is clicked)
+    document.addEventListener('click', function(e) {
+      if (e.target.closest('.language-switcher-link')) {
+        setTimeout(function() {
+          updateSubtitle();
+          updateLanguageFilterInfo();
+        }, 100);
+      }
+    });
+    
+    // Also listen for storage changes (in case language is changed in another tab)
+    window.addEventListener('storage', function(e) {
+      if (e.key === 'siteLanguage') {
+        updateSubtitle();
+        updateLanguageFilterInfo();
+      }
+    });
+  });
+  
+  // Update language filter info
+  function updateLanguageFilterInfo() {
+    var preferredLang = localStorage.getItem('siteLanguage') || 'vi';
+    
+    // Fixed post counts
+    var viPostCount = 18; // Total Vietnamese posts
+    var enPostCount = 4;  // Total English posts
+    
+    // Get or create info element
+    var infoElement = document.getElementById('language-filter-info');
+    if (!infoElement) {
+      infoElement = document.createElement('div');
+      infoElement.id = 'language-filter-info';
+      infoElement.className = 'language-filter-info';
+      var postsList = document.querySelector('.posts-list');
+      if (postsList && postsList.parentNode) {
+        postsList.parentNode.insertBefore(infoElement, postsList);
+      }
+    }
+    
+    // Show info if there are posts in both languages
+    if (viPostCount > 0 && enPostCount > 0) {
+      infoElement.style.display = 'block';
+      
+      // Update content based on language
+      if (preferredLang === 'en') {
+        infoElement.innerHTML = '<p><strong>You are viewing English posts only.</strong> ' + viPostCount + ' Vietnamese post' + (viPostCount > 1 ? 's are' : ' is') + ' hidden. <a href="#" class="show-all-posts" data-lang="vi">Switch to Vietnamese</a> to view them.</p>';
+      } else {
+        infoElement.innerHTML = '<p><strong>Bạn đang xem các bài viết tiếng Việt.</strong> Có ' + enPostCount + ' bài viết tiếng Anh chưa được hiển thị. <a href="#" class="show-all-posts" data-lang="en">Chuyển sang tiếng Anh</a> để xem chúng.</p>';
+      }
+      
+      // Add click handler for language switch link
+      var switchLink = infoElement.querySelector('.show-all-posts');
+      if (switchLink) {
+        switchLink.addEventListener('click', function(e) {
+          e.preventDefault();
+          var targetLang = this.getAttribute('data-lang');
+          localStorage.setItem('siteLanguage', targetLang);
+          // Trigger language filter update by clicking the language switcher
+          var langSwitcher = document.querySelector('.language-switcher-link[data-lang-selector="true"]');
+          if (langSwitcher) {
+            langSwitcher.click();
+          } else {
+            window.location.reload();
+          }
+        });
+      }
+    } else {
+      infoElement.style.display = 'none';
+    }
+  }
+  
+  // Update info on page load and language change
+  document.addEventListener('DOMContentLoaded', function() {
+    updateSubtitle();
+    updateLanguageFilterInfo();
+    
+    // Listen for language changes
+    document.addEventListener('click', function(e) {
+      if (e.target.closest('.language-switcher-link')) {
+        setTimeout(function() {
+          updateSubtitle();
+          updateLanguageFilterInfo();
+        }, 100);
+      }
+    });
+    
+    // Listen for storage changes
+    window.addEventListener('storage', function(e) {
+      if (e.key === 'siteLanguage') {
+        updateSubtitle();
+        updateLanguageFilterInfo();
+      }
+    });
+  });
+</script>
+
+<div id="language-filter-info" class="language-filter-info" style="display: none;"></div>
+
 <div class="posts-list">
   {% for post in paginator.posts %}
   {% assign post_filename = post.path | split: '/' | last %}

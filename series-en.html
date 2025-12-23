@@ -19,8 +19,10 @@ lang: en
             <span class="series-lang-badge lang-all">Both Vietnamese and English</span>
           {% elsif lang_status == "mixed" %}
             <span class="series-lang-badge lang-mixed">Some posts have both languages</span>
+          {% elsif single_lang == "vi" %}
+            <span class="series-lang-badge lang-single">Only Vietnamese posts</span>
           {% else %}
-            <span class="series-lang-badge lang-single">Single language only</span>
+            <span class="series-lang-badge lang-single">Only English posts</span>
           {% endif %}
         </div>
       </div>
