@@ -8,6 +8,8 @@ excerpt: >
 comments: false
 ---
 
+![Designing Spotify: A System Design Blueprint](/img/system-design/music-streaming-architecture/music-streaming-architecture.png)
+
 Have you ever wondered how Spotify delivers millions of songs to hundreds of millions of users worldwide with near-instant playback? Behind that simple "press play" experience lies a complex distributed system that must handle massive scale, low latency, and high availability.
 
 In this post, we'll break down how to architect a music streaming service that can handle **100+ million users**, serve a **30+ million song catalog**, and deliver **low-latency playback globally**—all while maintaining cost efficiency and scalability.
