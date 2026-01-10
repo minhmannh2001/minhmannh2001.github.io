@@ -8,6 +8,8 @@ excerpt: >
 comments: false
 ---
 
+![High-Level Twitter Architecture](/img/system-design/twitter-architecture/twitter-architecture.png)
+
 Hello there! It's been quite a while since I last uploaded a blog post. I've been through some significant changes—I switched jobs and needed time to familiarize myself with my new role. Now that I'm settled in, I'm ready to come back to blogging and share what I'm learning.
 
 Currently, I'm focusing on preparing for system design interview rounds, which are a crucial part of technical interviews at many tech companies. This is my first blog post on this topic, and I'm excited to share what I've learned.
@@ -18,9 +20,9 @@ Recently, I watched an excellent YouTube video about designing a Twitter-like sy
 
 # High-Level Architecture of a Twitter-like System
 
-![High-Level Twitter Architecture](/img/system-design/twitter-architecture/twitter-architecture.png)
-
 Ever wondered what it takes to run a massive social network like Twitter? It might seem simple on the surface—you post a thought, follow some friends, and scroll through a feed. But behind that smooth experience is a fascinating and complex engineering puzzle.
+
+![High level design](/img/system-design/twitter-architecture/high-level-design.png)
 
 Our goal here is to peek behind the curtain and understand the high-level architecture of such a system. We won't get lost in the weeds, but by the end, you'll have a solid grasp of the core concepts.
 
@@ -65,11 +67,15 @@ First, it hits a **Load Balancer**. Think of this as a traffic cop for the inter
 
 The requests are then sent to **Application Servers**. These are the "brains" of the operation. They contain the business logic to handle your actions, like fetching your feed or posting a new tweet. A key characteristic is that they are **stateless**—they don't store any data about your session. This is important because it allows the system to add more servers easily (a process called "horizontal scaling") to handle more traffic.
 
+![Load balancer](/img/system-design/twitter-architecture/load-balancer.png)
+
 ### 2.2. The System's Memory: Databases & Storage
 
 Once an application server gets a request, it needs to fetch or store data. This data lives in the system's long-term memory. To handle the volume, these databases are typically broken into many smaller pieces, or "shards," often based on the User ID.
 
-- **Relational Database (SQL)**: This type of database is great for highly structured data. It's a solid choice for storing the "follow" relationship because it allows for powerful joins, neatly linking every follower to the people they follow.
+![Database and storage](/img/system-design/twitter-architecture/database-and-storage.png)
+
+- **Relational Database (SQL)**: This type of database is great for highly structured data. It's a solid choice for storing the "follow" relationship because it allows for powerful joins, neatly linking every follower to the people they follow. Data is sharded across multiple database instances based on User ID to distribute the load.
 
 - **Graph Database (GraphDB)**: This is another powerful option for managing relationships. A GraphDB thinks of the network like a social map, where every user is a "node." Finding who someone follows is as simple as looking at their outgoing edges, and finding their followers means looking at the incoming edges. This makes these specific queries highly efficient.
 
@@ -81,7 +87,42 @@ Reading from a database, even a fast one, can be slow when you're doing it billi
 
 A **Caching Layer** sits between the application servers and the database. The cache stores frequently accessed data, like the most popular tweets of the hour. It's like a library keeping the most popular books on the front counter instead of in the back aisles. When a request comes in for a popular tweet, the system grabs it from the fast cache instead of making a slow trip to the database.
 
-A **Content Delivery Network (CDN)** does a similar job, but for media files. Here's how it works: the Application Server sends your device the tweet's text and metadata, which includes a special URL for any images or videos. That URL points to the CDN. Your device then makes a separate request directly to that CDN URL to fetch the media. A CDN is a global network of servers, so when a user in India requests a video, they get it from a nearby server in Asia instead of one in the United States, drastically reducing loading times. The system uses a "pull-based" CDN, meaning only popular media gets automatically copied to these global servers.
+<img src="/img/system-design/twitter-architecture/caching-layer.png" alt="Caching layer" style="max-width: 400px; width: 100%; height: auto;">
+
+A **Content Delivery Network (CDN)** does a similar job, but for media files. Here's how it works: the Application Server sends your device the tweet's text and metadata, which includes a special URL for any images or videos. That URL points to the CDN. Your device then makes a separate request directly to that CDN URL to fetch the media. A CDN is a global network of servers, so when a user in India requests a video, they get it from a nearby server in Asia instead of one in the United States, drastically reducing loading times. The system uses a **"pull-based" CDN**, meaning only popular media gets automatically copied to these global servers.
+
+**What is a "Pull-Based" CDN?**
+
+The system uses a **"pull-based" CDN**, which means:
+- **On-demand caching**: When a user requests media that isn't in the CDN yet, the CDN edge server fetches it from the origin server (like S3), caches it locally, and then serves it to the user
+- **Automatic popularity detection**: Only frequently requested media gets cached. If a video is rarely accessed, it won't be stored in the CDN, saving storage costs
+- **Lazy loading**: Content is cached only when needed, not pre-emptively uploaded
+- **Cost efficient**: You only pay for CDN storage for content that's actually being accessed
+
+This is different from a "push-based" CDN, where you manually upload all content to the CDN ahead of time, regardless of whether it's popular or not.
+
+> **📝 Note: Types of CDN**
+> 
+> There are two main approaches to CDN content distribution:
+> 
+> **1. Pull-Based CDN (On-Demand Caching)**
+> - Content is cached at edge locations only when users request it
+> - First request: CDN fetches from origin server, caches it, then serves to user
+> - Subsequent requests: Served directly from CDN cache (fast)
+> - **Pros**: Cost-efficient (only popular content is cached), automatic, no manual management
+> - **Cons**: First request may be slower (cache miss), requires origin server to be available
+> - **Use case**: User-generated content, dynamic content, when you can't predict what will be popular
+> 
+> **2. Push-Based CDN (Pre-Provisioned)**
+> - Content is manually uploaded to CDN edge locations before users request it
+> - All content is pre-cached at all edge locations
+> - **Pros**: Guaranteed fast first request, no dependency on origin server for cached content
+> - **Cons**: Expensive (pay for storage of all content everywhere), requires manual upload/update process
+> - **Use case**: Static assets, known popular content, when you want guaranteed performance
+> 
+> Most modern systems use pull-based CDNs because they're more cost-effective and automatically adapt to content popularity.
+
+![Caching and CDN](/img/system-design/twitter-architecture/caching-and-cdn.png)
 
 Now that we understand the individual parts, let's see how they work together to perform the most common task: building your news feed.
 
@@ -99,6 +140,8 @@ The naive approach would be to build the feed only when a user asks for it. When
 
 3. Finally, it merges all these tweets together and sorts them by time before sending them to your device.
 
+![On-demand approach](/img/system-design/twitter-architecture/on-demand-approach.png)
+
 The downside is that this process can be very slow, leading to high latency. This creates a poor user experience—imagine scrolling through your feed where most tweets load instantly, but one tweet in the middle gets stuck on a loading spinner for a few extra seconds. At scale, this approach falls apart.
 
 ### 3.2. Strategy 2: The Pre-Computed Approach (Fast but Complex)
@@ -113,6 +156,8 @@ To make the user experience nearly instant, the system can do the work ahead of 
 
 4. The workers then "push" that new tweet into the pre-made news feed for each of those followers. These ready-made feeds are stored in a dedicated, super-fast **Feed Cache**.
 
+![Pre-computed approach](/img/system-design/twitter-architecture/pre-computed-approach.png)
+
 The benefit is immense: when you open your app, your feed is already built and waiting for you in the cache. The application server just has to grab it, resulting in a very fast, low-latency experience.
 
 ### 3.3. The "Celebrity Problem": A Hybrid Solution
@@ -121,11 +166,15 @@ The pre-computed approach works great for most users. But what happens when a ce
 
 Under the pre-computed model, the system would have to perform 100 million separate write operations to update the feed cache for every single follower. This is "very, very expensive" and incredibly wasteful, because as the source notes, "...not all 100 million of those followers are even loading their feed every single day."
 
+![Celebrity problem solution](/img/system-design/twitter-architecture/celebrity-problem-solution.png)
+
 To solve this, the system uses a clever hybrid model that consciously trades a little latency for huge cost savings:
 
 - For most users, the system uses the fast pre-computed method.
 
 - For celebrities, the system reverts to the on-demand method. When you open your feed, the system first grabs your pre-computed timeline. Then, it makes a separate, quick request to fetch the latest tweets from any celebrities you follow and merges them into your feed right at that moment.
+
+![Celebrity problem](/img/system-design/twitter-architecture/celebrity-problem.png)
 
 This hybrid approach shows how real-world systems balance trade-offs between speed, cost, and complexity.
 
