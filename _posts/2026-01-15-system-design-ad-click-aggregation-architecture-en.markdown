@@ -813,6 +813,62 @@ Option 1 is easier to implement and doesn't depend on resource providers. In rea
 
 **Aggregated Data Storage (OLAP Database)**: The OLAP database can be scaled horizontally by adding more nodes. While we could shard by `ad_id`, we may also consider sharding by `advertiser_id` instead. In doing so, all the data for a given advertiser will be on the same node, making queries for that advertiser's ads faster. This is in anticipation of advertisers querying for all of their active ads in a single view. Of course, it's important to monitor the database and query performance to ensure that it's meeting the SLAs and adapting the sharding strategy as needed.
 
+#### Query Latency Optimization: Pre-Aggregating Data
+
+As mentioned in our non-functional requirements, advertisers need **sub-second response time** for querying aggregated data. Our real-time stream processing architecture already addresses this for recent time windows (minutes to hours) by pre-aggregating data at 1-minute granularity and storing it in the OLAP database. However, queries over larger time windows can still be slow.
+
+**The Problem: Large Time Window Queries**
+
+When advertisers query metrics over days, weeks, or months, the OLAP database needs to scan and aggregate millions of minute-level records. For example:
+- Querying 1 day of data: 1,440 minute-level records per ad
+- Querying 1 week of data: 10,080 minute-level records per ad  
+- Querying 1 month of data: ~43,200 minute-level records per ad
+
+With 2 million active ads, aggregating a month of data across all ads requires processing billions of records, which can take several seconds or even minutes—far exceeding our sub-second SLA.
+
+**The Solution: Multi-Level Pre-Aggregation**
+
+We can pre-aggregate data at multiple granularity levels in the OLAP database, similar to a materialized view or caching strategy. This creates a hierarchy of aggregated tables:
+
+| Granularity | Table Name | Aggregation Window | Use Case |
+|-------------|------------|-------------------|----------|
+| **Minute-level** | `ad_clicks_minute` | 1 minute | Real-time dashboards, recent queries |
+| **Hourly** | `ad_clicks_hour` | 1 hour | Daily reports, trend analysis |
+| **Daily** | `ad_clicks_daily` | 1 day | Weekly/monthly reports, historical analysis |
+| **Weekly** | `ad_clicks_weekly` | 1 week | Long-term trend analysis, quarterly reports |
+
+**Implementation:**
+
+1. **Real-time aggregation** (existing): Stream processor writes minute-level aggregates to `ad_clicks_minute` table
+2. **Hourly rollup**: A scheduled job runs every hour to aggregate the last 60 minutes from `ad_clicks_minute` into `ad_clicks_hour`
+3. **Daily rollup**: A nightly cron job aggregates 24 hours from `ad_clicks_hour` into `ad_clicks_daily`
+4. **Weekly rollup**: A weekly job aggregates 7 days from `ad_clicks_daily` into `ad_clicks_weekly`
+
+**Query Strategy:**
+
+When an advertiser queries data, the system intelligently selects the appropriate table based on the time range:
+
+```
+Example: Query clicks for last 30 days
+- Query ad_clicks_daily table (30 rows) instead of ad_clicks_minute (43,200 rows)
+- Response time: <100ms (vs 5+ seconds for minute-level aggregation)
+```
+
+For drill-down scenarios, the system can query multiple tables:
+- **High-level view**: Query `ad_clicks_daily` for monthly trends
+- **Detailed view**: Query `ad_clicks_minute` for specific hours when needed
+
+**Trade-offs:**
+
+| Aspect | Impact |
+|--------|--------|
+| **Query Performance** | ✅ Dramatically faster for large time windows (10-100x improvement) |
+| **Storage Cost** | ❌ Increases storage by ~15-20% (multiple aggregation levels) |
+| **Data Freshness** | ⚠️ Hourly/daily aggregates have slight delay (acceptable for historical queries) |
+| **Complexity** | ⚠️ Requires additional ETL jobs and query routing logic |
+
+Pre-aggregation is a common technique in OLAP systems, trading storage space for query performance. Given that storage is relatively cheap compared to query latency's impact on user experience, this is a worthwhile optimization for our system.
+
 #### Hotspot Issue
 
 A shard or service that receives much more data than the others is called a **hotspot**. This occurs because major companies have advertising budgets in the millions of dollars and their ads are clicked more often. Since events are partitioned by `ad_id`, hotspots can occur at two levels:
