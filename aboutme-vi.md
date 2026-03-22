@@ -8,7 +8,7 @@ permalink: /aboutme-vi.html
 
 # Giới thiệu về Blog của Mình
 
-Xin chào! Mình là **Mạnh**, sinh năm 2001, một lập trình viên backend hiện đang làm việc tại **công ty an ninh mạng Viettel**. Dù mới có hơn một năm kinh nghiệm trong nghề, mình đã có những trải nghiệm thú vị với lĩnh vực này. Dù chưa thực sự giỏi, nhưng mình vẫn luôn cố gắng mỗi ngày và đặc biệt là vẫn giữ nguyên niềm đam mê với lập trình.
+Xin chào! Mình là **Mạnh**, sinh năm 2001. Mình là **lập trình viên backend** với **hơn 3 năm kinh nghiệm**. Hiện tại mình đang ở level Middle, tập trung vào việc học tập, rèn luyện kỹ năng để thiết kế những hệ thống có tính ổn định, scalable, hiệu năng cao.
 
 Hồi cấp 2, mình rất thích chơi game, và khi lên cấp 3, đứng trước lựa chọn nghề nghiệp tương lai, mình quyết định theo học ngành **Khoa học máy tính** tại đại học **Bách khoa Hà Nội**. Khi đó, mình chỉ nghĩ đơn giản là sẽ học lập trình game, mà chưa biết rằng lập trình game chỉ là một phần nhỏ trong lĩnh vực Công nghệ thông tin rộng lớn hay liệu định hướng của mình có thay đổi trong quá trình học hay không. Giờ đây, nhìn lại hành trình của mình, mình cảm thấy đó là một quyết định đúng đắn.
 
