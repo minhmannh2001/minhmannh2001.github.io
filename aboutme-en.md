@@ -1,10 +1,10 @@
 ---
-
-## layout: page
+layout: page
 title: About me
 subtitle: null
 lang: en
 permalink: /aboutme-en.html
+---
 
 # About My Blog
 
