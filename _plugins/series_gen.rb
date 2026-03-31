@@ -17,7 +17,8 @@ module Jekyll
       @site = site
       @base = base
       @dir = dir
-      @name = "#{Utils.slugify(series['name'])}.html"
+      slug = series['slug'] && !series['slug'].empty? ? series['slug'] : Utils.slugify(series['name'])
+      @name = "#{slug}.html"
 
       self.process(@name)
       self.read_yaml(File.join(base, '_layouts'), 'series_detail.html')

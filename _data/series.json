@@ -36,7 +36,15 @@
     "posts": [
       "/2025/12/15/system-design-twitter-architecture-en",
       "/2025/12/19/system-design-youtube-architecture-en",
-      "/2025/12/25/system-design-web-search-engine-architecture-en"
+      "/2025/12/23/system-design-web-search-engine-architecture-en",
+      "/2025/12/30/system-design-ride-sharing-platform-architecture-en",
+      "/2026/01/02/audio-streaming-hls-cdn-architecture-en",
+      "/2026/01/05/system-design-real-time-chat-application-architecture-en",
+      "/2026/01/09/system-design-cloud-file-storage-architecture-en",
+      "/2026/01/15/system-design-ad-click-aggregation-architecture-en",
+      "/2026/01/28/system-design-hotel-booking-architecture-en",
+      "/2026/01/29/system-design-leaderboard-architecture-en",
+      "/2026/03/09/system-design-payment-gateway-architecture-en"
     ]
   }
 ]
