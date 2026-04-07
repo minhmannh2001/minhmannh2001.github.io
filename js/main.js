@@ -373,17 +373,87 @@ var main = {
       return null;
     };
     
+    // Series detail page: filter list by language, renumber visible rows, toggle empty message
+    var filterSeriesDetailPosts = function(lang) {
+      var root = document.querySelector('.series-detail[data-series-detail="true"]');
+      if (!root) {
+        return;
+      }
+      var items = root.querySelectorAll('.series-post-item[data-post-lang]');
+      if (!items.length) {
+        return;
+      }
+      var hasEn = false;
+      var hasVi = false;
+      for (var i = 0; i < items.length; i++) {
+        var pl = items[i].getAttribute('data-post-lang');
+        if (pl === 'en') {
+          hasEn = true;
+        }
+        if (pl === 'vi') {
+          hasVi = true;
+        }
+      }
+      root.setAttribute('data-series-has-en', hasEn ? 'true' : 'false');
+      root.setAttribute('data-series-has-vi', hasVi ? 'true' : 'false');
+      var visible = 0;
+      for (var j = 0; j < items.length; j++) {
+        var show = items[j].getAttribute('data-post-lang') === lang;
+        items[j].style.display = show ? '' : 'none';
+        if (show) {
+          visible++;
+        }
+      }
+      var emptyEl = document.getElementById('series-detail-no-posts');
+      if (emptyEl) {
+        emptyEl.style.display = visible === 0 ? 'block' : 'none';
+      }
+      var n = 0;
+      for (var k = 0; k < items.length; k++) {
+        if (items[k].style.display !== 'none') {
+          n++;
+          var badge = items[k].querySelector('.post-number');
+          if (badge) {
+            badge.textContent = n;
+          }
+        }
+      }
+    };
+    
     // Handle language selector clicks
     $(document).on('click', '.language-switcher-link[data-lang-selector="true"]', function(e) {
       e.preventDefault();
       var currentLang = $(this).attr('data-current-lang') || getLanguagePreference();
       var newLang = currentLang === 'en' ? 'vi' : 'en';
       
+      var seriesRoot = document.querySelector('.series-detail[data-series-detail="true"]');
+      if (seriesRoot) {
+        var targetAvailable = newLang === 'en'
+          ? seriesRoot.getAttribute('data-series-has-en') === 'true'
+          : seriesRoot.getAttribute('data-series-has-vi') === 'true';
+        if (!targetAvailable) {
+          var $modal = $('#series-lang-unavailable-modal');
+          if ($modal.length) {
+            $('#series-lang-unavailable-msg-en').toggle(newLang === 'en');
+            $('#series-lang-unavailable-msg-vi').toggle(newLang === 'vi');
+            $modal.modal('show');
+          } else {
+            var msg = newLang === 'en'
+              ? 'This series does not include any posts in English.'
+              : 'Series này không có bài viết tiếng Việt.';
+            window.alert(msg);
+          }
+          return;
+        }
+      }
+      
       // Update preference
       setLanguagePreference(newLang);
       
       // Filter posts on home page
       filterPosts(newLang, false);
+      
+      filterSeriesDetailPosts(newLang);
       
       // Update all language switchers
       updateLanguageSwitcher(newLang);
@@ -439,6 +509,9 @@ var main = {
     
     // Apply language filter on home page
     filterPosts(preferredLang, true);
+    
+    // Series detail: align list with preference (refine after inline script)
+    filterSeriesDetailPosts(preferredLang);
   }
 };
 

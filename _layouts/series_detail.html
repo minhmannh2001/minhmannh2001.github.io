@@ -46,7 +46,7 @@ layout: base
   <div class="row">
     <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
       {% if series %}
-      <div class="series-detail">
+      <div class="series-detail" data-series-detail="true" data-series-has-en="false" data-series-has-vi="false">
         <div class="series-header">
           <a href="{{ site.baseurl }}/series.html" class="back-to-series">← Back to All Series</a>
           <h1>{{ series.name }}</h1>
@@ -55,7 +55,12 @@ layout: base
 
         <hr>
 
-        <ul class="post-list">
+        <div id="series-detail-no-posts" class="alert alert-info series-detail-empty-msg" style="display: none;" role="status">
+          <p class="series-detail-empty-en"><strong>English:</strong> No posts in this series match your selected language. Use the language control in the header to choose another language.</p>
+          <p class="series-detail-empty-vi"><strong>Tiếng Việt:</strong> Không có bài viết nào trong series khớp với ngôn ngữ bạn đang chọn. Hãy dùng nút đổi ngôn ngữ trên thanh menu để chọn ngôn ngữ khác.</p>
+        </div>
+
+        <ul class="post-list series-post-list">
           {% assign post_index = 0 %}
           {% for post_url in series.posts %}
             {% assign post_index = post_index | plus: 1 %}
@@ -87,7 +92,14 @@ layout: base
             {% endunless %}
             
             {% if found_post %}
-              <li>
+              {% assign item_post_path = found_post.path | split: '/' | last %}
+              {% assign item_lang = 'vi' %}
+              {% if item_post_path contains '-en.' %}
+                {% assign item_lang = 'en' %}
+              {% elsif item_post_path contains '-vi.' %}
+                {% assign item_lang = 'vi' %}
+              {% endif %}
+              <li class="series-post-item" data-post-lang="{{ item_lang }}" data-series-order="{{ post_index }}">
                 <div class="post-number">{{ post_index }}</div>
                 <div class="post-content">
                   <h3>
@@ -100,6 +112,59 @@ layout: base
             {% endif %}
           {% endfor %}
         </ul>
+
+        <div class="modal fade" id="series-lang-unavailable-modal" tabindex="-1" role="dialog" aria-labelledby="series-lang-unavailable-title" aria-hidden="true">
+          <div class="modal-dialog" role="document">
+            <div class="modal-content">
+              <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="series-lang-unavailable-title">Language not available</h4>
+              </div>
+              <div class="modal-body">
+                <p id="series-lang-unavailable-msg-en">This series does not include any posts in the language you selected.</p>
+                <p id="series-lang-unavailable-msg-vi">Series này không có bài viết ở ngôn ngữ bạn vừa chọn.</p>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">OK</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <script>
+        (function() {
+          try {
+            var pref = localStorage.getItem('siteLanguage') || 'vi';
+            var items = document.querySelectorAll('.series-post-item[data-post-lang]');
+            var root = document.querySelector('.series-detail[data-series-detail]');
+            if (!items.length || !root) return;
+            var hasEn = false, hasVi = false;
+            for (var i = 0; i < items.length; i++) {
+              var l = items[i].getAttribute('data-post-lang');
+              if (l === 'en') hasEn = true;
+              if (l === 'vi') hasVi = true;
+            }
+            root.setAttribute('data-series-has-en', hasEn ? 'true' : 'false');
+            root.setAttribute('data-series-has-vi', hasVi ? 'true' : 'false');
+            var visible = 0;
+            for (var j = 0; j < items.length; j++) {
+              var show = items[j].getAttribute('data-post-lang') === pref;
+              items[j].style.display = show ? '' : 'none';
+              if (show) visible++;
+            }
+            var emptyEl = document.getElementById('series-detail-no-posts');
+            if (emptyEl) emptyEl.style.display = visible === 0 ? 'block' : 'none';
+            var n = 0;
+            for (var k = 0; k < items.length; k++) {
+              if (items[k].style.display !== 'none') {
+                n++;
+                var badge = items[k].querySelector('.post-number');
+                if (badge) badge.textContent = n;
+              }
+            }
+          } catch (e) {}
+        })();
+        </script>
       </div>
       {% else %}
       <div class="series-detail">
