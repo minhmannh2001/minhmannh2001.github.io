@@ -59,24 +59,32 @@ layout: base
           {% assign post_index = 0 %}
           {% for post_url in series.posts %}
             {% assign post_index = post_index | plus: 1 %}
-            {% assign found_post = null %}
+            {% assign found_post = nil %}
             {% comment %} Extract the slug from the series URL (last part after the last slash) {% endcomment %}
             {% assign series_url_parts = post_url | split: '/' %}
             {% assign series_slug = series_url_parts | last | remove: '.html' %}
             
-            {% comment %} Try to find matching post by comparing slugs {% endcomment %}
+            {% comment %} Match post: prefer exact slug (e.g. ...-vi vs ...-en), else same base for single-language series {% endcomment %}
             {% for post in site.posts %}
               {% assign post_url_parts = post.url | split: '/' %}
               {% assign post_slug = post_url_parts | last | remove: '.html' | remove: '/' %}
-              {% comment %} Remove language suffix (-vi, -en) from both slugs for comparison {% endcomment %}
+              {% if post_slug == series_slug %}
+                {% assign found_post = post %}
+                {% break %}
+              {% endif %}
+            {% endfor %}
+            {% unless found_post %}
+            {% for post in site.posts %}
+              {% assign post_url_parts = post.url | split: '/' %}
+              {% assign post_slug = post_url_parts | last | remove: '.html' | remove: '/' %}
               {% assign post_slug_base = post_slug | remove: '-vi' | remove: '-en' %}
               {% assign series_slug_base = series_slug | remove: '-vi' | remove: '-en' %}
-              
               {% if post_slug_base == series_slug_base %}
                 {% assign found_post = post %}
                 {% break %}
               {% endif %}
             {% endfor %}
+            {% endunless %}
             
             {% if found_post %}
               <li>

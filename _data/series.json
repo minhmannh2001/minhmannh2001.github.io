@@ -1,5 +1,18 @@
 [
   {
+    "slug": "mit-6-5840-distributed-systems-labs",
+    "name": "MIT 6.5840: Distributed Systems Labs",
+    "description": "Hands-on walkthrough of MIT’s distributed systems course (6.5840): MapReduce, a linearizable key/value server, distributed locks, and Raft consensus. Each lab is available in English and Vietnamese.",
+    "posts": [
+      "/2025/07/04/mit-6.5840-distributed-systems-lab-1-vi",
+      "/2025/07/04/mit-6.5840-distributed-systems-lab-1-en",
+      "/2025/07/20/mit-6.5840-distributed-systems-lab-2-vi",
+      "/2025/07/20/mit-6.5840-distributed-systems-lab-2-en",
+      "/2026/04/07/mit-6.5840-distributed-systems-lab-3-part-3a-vi",
+      "/2026/04/07/mit-6.5840-distributed-systems-lab-3-part-3a-en"
+    ]
+  },
+  {
     "slug": "build-your-own-x-tu-xay-dung-mot-web-framework-voi-go",
     "name": "Build your own X: Tự xây dựng một web framework với Go",
     "description": "Hướng dẫn từng bước để tự xây dựng một web framework bằng ngôn ngữ Go – bao gồm các chủ đề như định tuyến (routing), middleware, xử lý HTTP request, và nhiều phần quan trọng khác.",

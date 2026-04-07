@@ -1,0 +1,434 @@
+---
+layout: post
+title: "MIT 6.5840 Lab 2: Key/Value Server and Distributed Lock with Linearizability"
+date: 2025-07-20 23:30:00 +0700
+excerpt: >
+  The second post in a series on distributed systems through the MIT 6.5840 labs. This post covers building a single-node key/value server with linearizability, then using it to implement a distributed lock.
+comments: false
+---
+
+**MIT 6.5840 Lab 2** is a hands-on introduction to building reliable systems when the network misbehaves — lost or delayed packets that force clients to retry — and when many clients access the service concurrently.
+
+Starting from a **simple single-machine key/value server**, you extend it to meet strict **linearizability** and **at-most-once semantics**, two ideas that matter in modern systems such as Amazon DynamoDB.
+
+You will:
+
+- Keep `Put` and `Get` correct under concurrency.
+- Handle retries after timeouts or network failures.
+- Build toward a **distributed lock** for coordinating distributed processes.
+
+The server exposes:
+
+- `Put(key, value, version)`: write a value only if `version` matches the stored version.
+- `Get(key)`: return the current value and version.
+
+Even though it runs on one machine, the tests simulate many concurrent clients and unreliable networks. Lab 2 stands out because the test suite is deliberately demanding — retries, races, and concurrency — so you have to understand the model, not just pass happy-path checks.
+
+Completing the lab reinforces:
+
+- **At-most-once semantics**: a logical `Put` executes at most once on the server, even if the client retries.
+- **Linearizability**: operations appear to run one-after-another on a single sequential thread.
+- **Distributed lock**: mutual exclusion built on a simple K/V API.
+- **Test-driven development**: reading tests as a specification.
+
+## What is linearizability?
+
+Before writing server code, we need the consistency rule the whole lab is built on: **linearizability**.
+
+You are implementing a server that serves concurrent clients over an unreliable network — reordering, loss, and delay are all possible. You cannot assume “whoever sent first is processed first,” because send order ≠ delivery order ≠ execution order.
+
+You need a precise model of when a read or write **takes effect**, and how every client observes that. **Linearizability** is that model.
+
+Mastering it helps both for the lab tests and for reasoning about real distributed services.
+
+### 1. A motivating scenario
+
+Suppose Bob opens a banking app to check his balance while Alice withdraws cash at an ATM miles away. What should Bob see? Has Alice’s withdrawal taken effect yet?
+
+**Linearizability** answers that question rigorously. Each operation is modeled as taking effect at a **single instant** somewhere between its start and end. Externally, **the system behaves as if operations run sequentially**, in **some total order**, on **one logical thread** — even though many clients run in parallel.
+
+Three core rules:
+
+- **Reads see the latest completed write**: after a write completes, every later read must see that write’s effect (or a superseding one).
+- **Writes have a single agreed order**: concurrent writes are ordered one way; all clients observe that same order.
+- **Real-time order is respected**: if operation A **finishes** before operation B **starts** (no overlap), the logical order must place A before B. Responses cannot contradict that observable ordering.
+
+> **Concurrent** (overlapping) operations: imagine A runs from 00:00:00.000 to 00:00:00.005 and B from 00:00:00.003 to 00:00:00.007. Their intervals overlap, so neither clearly “happened first.” The system may pick either order, as long as it stays consistent everywhere.
+
+So: overlapping operations may be ordered either way; non-overlapping operations must respect real time.
+
+To connect this to Bob and Alice, consider two cases:
+
+### 2. Analyzing the scenarios
+
+#### Scenario 1: non-overlapping operations
+
+Alice withdraws $100 from an account that started at $600. Her transaction **completes** before Bob opens the app.
+
+- 8:00:00 — Alice starts the withdrawal.
+- 8:00:05 — Alice’s transaction completes; balance is $500.
+- 8:00:10 — Bob opens the app and requests his balance.
+- 8:00:15 — Bob receives the response.
+
+Because Alice finished before Bob’s read **began**, linearizability requires Bob to see **$500**. Any read that starts after a write completes must reflect that write.
+
+#### Scenario 2: overlapping operations
+
+Alice starts a $100 withdrawal; Bob almost simultaneously checks his balance.
+
+- 8:00:00 — Alice starts.
+- 8:00:01 — Bob starts his read.
+- 8:00:04 — Alice’s withdrawal completes.
+- 8:00:06 — Bob gets his result.
+
+The operations overlap, so the implementation may legally linearize them in either order:
+
+- Order 1: Alice’s withdrawal before Bob’s read → Bob sees **$500**.
+- Order 2: Bob’s read before Alice finishes → Bob sees **$600**.
+
+Both are linearizable if the system sticks to one consistent story for all later operations. Each operation still has one logical timestamp in its real-time window, and the whole history looks sequential.
+
+With that foundation, we move to the implementation.
+
+## Part 1: Linearizable key/value server
+
+### 1. Functional requirements
+
+We build a small key/value server with two RPCs:
+
+- `Put(key, value, version)`: conditional write.
+- `Get(key)`: read value and version.
+
+#### 1.1. Goals
+
+- **At-most-once `Put`**: even with retries, each logical `Put` applies at most once on the server.
+- **Linearizability**: client-visible behavior matches some sequential schedule of those operations.
+
+#### 1.2. `Put` rules
+
+- If `version` matches the stored version, update the value and bump the version by 1.
+- If `version == 0` and the key does not exist, create the key.
+- Otherwise reject with `ErrVersion`.
+
+#### 1.3. Unreliable networks
+
+Clients retry when RPCs fail or time out.
+
+A subtle case: the server returns `rpc.ErrVersion` for a **retried** `Put`. The client cannot tell whether:
+
+- The first attempt succeeded and the response was lost (version moved on), or
+- Another client updated the key first, or
+- The first attempt never arrived.
+
+So if `rpc.ErrVersion` arrives on a **retransmitted** `Put`, `client.Put` must return **`rpc.ErrMaybe`** to the application — the outcome is ambiguous and the app must decide what to do.
+
+If `rpc.ErrVersion` arrives on the **first** attempt (not a retry), the client can treat it as a definite rejection and surface `rpc.ErrVersion`.
+
+### 2. What the tests check
+
+The lab’s tests encode important behaviors:
+
+1. **`TestReliablePut`**: basic `Put`/`Get` on a reliable network — values and versions match expectations.
+
+2. **`TestPutConcurrentReliable`**: concurrent writers on the same key under a reliable network; `sync.Mutex` protects the map; **Porcupine** checks linearizability from the operation history.
+
+3. **`TestMemPutManyClientsReliable`**: many clients (up to 100,000) to catch memory leaks; a correct server stores only current key state, not per-client or per-request metadata.
+
+4. **`TestUnreliableNet`**: dropped RPCs in both directions; client retry logic must preserve **at-most-once** execution of each logical `Put`.
+
+### 3. RPC error codes
+
+- `OK`: success.
+- `ErrNoKey`: key not found.
+- `ErrVersion`: `Put` rejected because the version did not match — prevents lost-update anomalies.
+- `ErrMaybe`: after retries, the client still cannot tell whether a mutating operation completed (ambiguous outcome).
+
+### 4. Implementation
+
+#### 4.1. Server data structures
+
+The K/V server keeps an in-memory `map` protected by `sync.Mutex`. Each key stores `ValueHandle` with `Value` and `Version` for compare-and-swap style updates.
+
+From `src/kvsrv1/server.go`:
+
+```go
+package kvsrv
+
+import (
+	"sync"
+	"6.5840/kvsrv1/rpc"
+)
+
+// ValueHandle holds a value and its current version.
+type ValueHandle struct {
+	Value   string
+	Version rpc.Tversion
+}
+
+type KVServer struct {
+	mu   sync.Mutex
+	data map[string]ValueHandle
+}
+
+func MakeKVServer() *KVServer {
+	kv := &KVServer{}
+	kv.data = make(map[string]ValueHandle)
+	return kv
+}
+```
+
+#### 4.2. `Get`
+
+**Server:** read-only but still lock for a consistent view with concurrent `Put`s.
+
+```go
+func (kv *KVServer) Get(args *rpc.GetArgs, reply *rpc.GetReply) {
+	kv.mu.Lock()
+	defer kv.mu.Unlock()
+
+	if value, ok := kv.data[args.Key]; ok {
+		reply.Value = value.Value
+		reply.Version = value.Version
+		reply.Err = rpc.OK
+	} else {
+		reply.Err = rpc.ErrNoKey
+	}
+}
+```
+
+**Client:** `Get` is **idempotent**, so retry loops are safe:
+
+```go
+func (ck *Clerk) Get(key string) (string, rpc.Tversion, rpc.Err) {
+	args := rpc.GetArgs{Key: key}
+	reply := rpc.GetReply{}
+	for {
+		ok := ck.clnt.Call(ck.server, "KVServer.Get", &args, &reply)
+		if ok {
+			return reply.Value, reply.Version, reply.Err
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+}
+```
+
+#### 4.3. Conditional `Put` for at-most-once
+
+Unlike `Get`, `Put` is **not** idempotent: repeating it can change state incorrectly. The fix pairs **server-side version checks** with **careful client retry handling**.
+
+**Server:**
+
+- **Existing key:** accept only if `args.Version == current.Version`; then write and set version to `args.Version + 1`. A stale retry sees a version mismatch and gets `ErrVersion`.
+- **New key:** allow only if `args.Version == 0`; start at version `1`. Otherwise `ErrNoKey` if the client tries to update a missing key with a non-zero version.
+
+```go
+// Put performs a conditional update: succeeds only if args.Version matches the stored version.
+func (kv *KVServer) Put(args *rpc.PutArgs, reply *rpc.PutReply) {
+	kv.mu.Lock()
+	defer kv.mu.Unlock()
+
+	key := args.Key
+	current, exists := kv.data[key]
+
+	if exists {
+		if args.Version != current.Version {
+			reply.Err = rpc.ErrVersion
+			return
+		}
+		kv.data[key] = ValueHandle{Value: args.Value, Version: args.Version + 1}
+	} else {
+		if args.Version != 0 {
+			reply.Err = rpc.ErrNoKey
+			return
+		}
+		kv.data[key] = ValueHandle{Value: args.Value, Version: 1}
+	}
+
+	reply.Err = rpc.OK
+}
+```
+
+**Client — ambiguity and `ErrMaybe`:**
+
+If the first `Put` succeeded but the `OK` reply was lost, a retry with the same `version` hits `ErrVersion`. That could also mean “another writer won.” The client cannot distinguish → return **`rpc.ErrMaybe`**.
+
+```go
+func (ck *Clerk) Put(key, value string, version rpc.Tversion) rpc.Err {
+	args := rpc.PutArgs{Key: key, Value: value, Version: version}
+	reply := rpc.PutReply{}
+	retries := 0
+	for {
+		ok := ck.clnt.Call(ck.server, "KVServer.Put", &args, &reply)
+		if ok {
+			if retries > 0 && reply.Err == rpc.ErrVersion {
+				return rpc.ErrMaybe
+			}
+			return reply.Err
+		}
+		retries++
+		time.Sleep(100 * time.Millisecond)
+	}
+}
+```
+
+Together, mutex + versioning give you a linearizable, at-most-once K/V layer — the base for Part 2.
+
+## Part 2: Distributed lock
+
+With a reliable **at-most-once** K/V store, we can layer a **distributed lock**: clients call `Acquire` and `Release` with correct behavior under concurrency and unreliable networks.
+
+### 1. Requirements
+
+#### 1.1. Mutual exclusion
+
+At most one client holds the lock at a time.
+
+#### 1.2. API: `Acquire` and `Release`
+
+- `Acquire()`: block until the lock is free, then take it.
+- `Release()`: drop the lock the holder no longer needs.
+
+#### 1.3. Fault tolerance
+
+`Acquire` / `Release` must tolerate lost or delayed RPCs via safe retries.
+
+#### 1.4. Progress
+
+When the last holder releases, waiting clients eventually acquire the lock — no deadlock where everyone waits forever.
+
+### 2. Tests
+
+- **`TestOneClientReliable`**: one client, reliable network — basic acquire/release sanity check.
+
+- **`TestManyClientsReliable`**: many concurrent `Acquire` callers; at most one critical section at a time.
+
+- **`TestOneClientUnreliable`**: one client on an unreliable network; retries must still yield correct acquire/release.
+
+- **`TestManyClientsUnreliable`**: hardest case — contention plus message loss.
+
+### 3. Implementation: test-and-set style spin lock
+
+We implement a classic **test-and-set** style loop: read lock state, try to claim it, repeat until successful.
+
+**Lock state in the K/V store:**
+
+- **Free:** value `""`.
+- **Held:** value is a unique client token identifying the holder.
+
+**Operations:**
+
+- **`Acquire`:** `Get` the key; if empty, conditional `Put` from `""` to this client’s token (using the current version). On version conflict, retry.
+- **`Release`:** `Put` back to `""` only when the current value equals our token.
+
+#### 3.1. `MakeLock`
+
+`MakeLock` returns a client-side **handle** (`clerk`, lock `key`, random `value` as client ID). It tries to initialize the key to `""` with `Put(..., version=0)` if the key is missing; racing initializers may see `ErrVersion`, which is fine — the key exists.
+
+`src/kvsrv1/lock/lock.go`:
+
+```go
+package lock
+
+import (
+	"time"
+	"6.5840/kvsrv1/rpc"
+	kvtest "6.5840/kvtest1"
+)
+
+type Lock struct {
+	ck    kvtest.IKVClerk
+	key   string // K/V key representing the lock.
+	value string // Unique token for this lock handle (the "owner id").
+}
+
+// MakeLock creates a client-side lock handle and ensures the lock key exists on the server.
+func MakeLock(ck kvtest.IKVClerk, l string) *Lock {
+	lk := &Lock{
+		ck:    ck,
+		key:   l,
+		value: kvtest.RandValue(8),
+	}
+
+	for {
+		_, _, err := ck.Get(l)
+		if err == rpc.ErrNoKey {
+			err = ck.Put(l, "", 0)
+			if err == rpc.OK || err == rpc.ErrVersion {
+				break
+			}
+		} else if err == rpc.OK {
+			break
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+
+	return lk
+}
+```
+
+#### 3.2. `Acquire`
+
+Blocking spin lock:
+
+1. **Test:** `Get` current value and version.
+2. **Set:** if `state == ""`, try `Put` to `lk.value` with that version.
+3. If we already see `state == lk.value`, we hold the lock (e.g. successful prior `Acquire` but lost reply) — return (**idempotent acquire**).
+
+```go
+// Acquire blocks until this client holds the lock.
+func (lk *Lock) Acquire() {
+	for {
+		state, version, err := lk.ck.Get(lk.key)
+
+		if err == rpc.OK {
+			if state == "" {
+				putErr := lk.ck.Put(lk.key, lk.value, version)
+				if putErr == rpc.OK {
+					return
+				}
+			} else if state == lk.value {
+				return
+			}
+		}
+
+		time.Sleep(10 * time.Millisecond)
+	}
+}
+```
+
+#### 3.3. `Release`
+
+Only the current holder clears the lock; if someone else took it after us, we stop — avoids a delayed `Release` wiping a new owner.
+
+```go
+func (lk *Lock) Release() {
+	for {
+		state, version, err := lk.ck.Get(lk.key)
+
+		if err == rpc.OK && state == lk.value {
+			putErr := lk.ck.Put(lk.key, "", version)
+			if putErr == rpc.OK || putErr == rpc.ErrVersion {
+				return
+			}
+		} else if err == rpc.OK {
+			return
+		}
+
+		time.Sleep(10 * time.Millisecond)
+	}
+}
+```
+
+This design stays safe when RPCs are duplicated or reordered: ownership is always checked against the stored token before clearing.
+
+## Conclusion
+
+We built a small fault-tolerant, linearizable key/value server and, on top of it, a distributed lock — a concrete example of synchronization in an unreliable environment.
+
+Takeaways:
+
+- **Simple primitives, used correctly** — conditional `Put` with versions is enough to build much richer coordination.
+- **Separate concerns** — retries and ambiguity (`ErrMaybe`) live in the client; the server stays simple.
+- **Idempotence where possible** — safe retries are essential in distributed systems.
+
+Lab 3 moves to multiple nodes and **Raft** for replicated consistency; the habits from Lab 2 — careful ordering, versions, and test-driven reasoning — carry straight forward.
