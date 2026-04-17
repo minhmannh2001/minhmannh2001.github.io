@@ -59,6 +59,12 @@ Here is exactly what happens when you use the app:
 
 Each step above has a non-obvious engineering problem hiding inside it. Understanding those problems is what this series is about.
 
+Below is a short demo video.
+
+<video controls preload="metadata" playsinline width="100%">
+  <source src="/img/simple-app-builder/part-1/demo-pt1-03-end-to-end.mp4" type="video/mp4">
+</video>
+
 ---
 
 ## The four problems that make this non-trivial
@@ -413,7 +419,7 @@ export default async function ProjectPage({ params }: PageProps) {
 
 At this point `listMessagesByProjectId` and `listProjectFileEntriesForWorkbench` will return empty arrays since no messages or files exist yet. You are setting up the data loading pattern that Parts 2–8 will fill in.
 
-![workspace `/project/[id]` right after creating a project](/img/simple-app-builder/part-01/demo-pt1-01-workspace-after-create.png)
+![workspace `/project/[id]` right after creating a project](/img/simple-app-builder/part-1/demo-pt1-01-workspace-after-create.png)
 
 ---
 
@@ -426,7 +432,7 @@ After `npm run dev`:
 - [ ] Refreshing the workspace page: same id, no crash.
 - [ ] Going back to `/`: the project appears in the list.
 
-![home `/` with at least one project row after round trip](/img/simple-app-builder/part-01/demo-pt1-02-home-with-project-in-list.png)
+![home `/` with at least one project row after round trip](/img/simple-app-builder/part-1/demo-pt1-02-home-with-project-in-list.png)
 
 ---
 
