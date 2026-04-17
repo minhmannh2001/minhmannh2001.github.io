@@ -136,6 +136,7 @@ The principle: **`readPersist` is all-or-nothing** — either apply the entire v
 
 The order of operations in `Make()` matters more than it might appear:
 
+{% raw %}
 ```go
 func Make(peers []*labrpc.ClientEnd, me int,
     persister *tester.Persister, applyCh chan raftapi.ApplyMsg) raftapi.Raft {
@@ -167,6 +168,7 @@ func Make(peers []*labrpc.ClientEnd, me int,
     return rf
 }
 ```
+{% endraw %}
 
 **Why set defaults first?** If `readPersist` is called with an empty or corrupt blob, it returns without changing anything. If defaults were not set beforehand, `rf.log` would be `nil` — code would panic as soon as `lastLogTerm()` is called.
 
@@ -604,6 +606,7 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 Before running integration tests, we wrote unit tests to validate each invariant individually:
 
 **Persistence round-trip:**
+{% raw %}
 ```go
 // TestPersistReadPersistRoundTrip3C: encode then decode must restore the same state
 func TestPersistReadPersistRoundTrip3C(t *testing.T) {
@@ -618,6 +621,7 @@ func TestPersistReadPersistRoundTrip3C(t *testing.T) {
     // Assert: dst.currentTerm==7, dst.votedFor==2, dst.log==src.log
 }
 ```
+{% endraw %}
 
 **readPersist is a no-op on empty or corrupt blobs:**
 ```go
