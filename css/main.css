@@ -945,44 +945,39 @@ td.gutter {
 
 /* --- Language Switcher (in Navbar) --- */
 
-.language-switcher-nav {
-  display: flex;
-  align-items: center;
-}
-
-/* Globe button */
+/* Globe button wrapper — sits inside <li> like other nav items */
 .lang-dropdown {
   position: relative;
-  display: inline-flex;
-  align-items: center;
+  display: block;
 }
 
+/* Match Bootstrap 3 nav link vertical padding so it aligns with other items */
 .lang-dropdown-btn {
   background: none;
   border: none;
   cursor: pointer;
-  padding: 5px 7px;
-  color: #404040;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 4px;
-  transition: color 0.2s ease, background-color 0.2s ease;
+  padding: 15px 10px;
+  color: #404040;
+  border-radius: 0;
+  transition: color 0.2s ease;
   line-height: 1;
 }
 
 .lang-dropdown-btn:hover,
 .lang-dropdown-btn:focus {
   color: #0085a1;
-  background-color: rgba(0, 133, 161, 0.08);
   outline: none;
+  text-decoration: none;
 }
 
-/* Dropdown menu */
+/* Dropdown popup (desktop only) */
 .lang-dropdown-menu {
   display: none;
   position: absolute;
-  top: calc(100% + 6px);
+  top: calc(100% + 2px);
   right: 0;
   background: #fff;
   border: 1px solid #e0e0e0;
@@ -1021,7 +1016,7 @@ td.gutter {
 }
 
 .lang-flag {
-  font-size: 16px;
+  font-size: 15px;
   line-height: 1;
 }
 
@@ -1038,6 +1033,52 @@ td.gutter {
 .lang-option-active {
   color: #0085a1;
   font-weight: 700;
+}
+
+/* ---- Mobile: flat options instead of nested dropdown ---- */
+@media (max-width: 767px) {
+  /* Hide the globe toggle button */
+  .lang-dropdown-btn {
+    display: none;
+  }
+
+  /* Always show the options flat in the nav list */
+  .lang-dropdown-menu {
+    display: block;
+    position: static;
+    box-shadow: none;
+    border: none;
+    border-radius: 0;
+    padding: 0;
+    min-width: 0;
+    white-space: normal;
+  }
+
+  /* Match Bootstrap mobile nav link style */
+  .lang-option {
+    padding: 10px 15px;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #404040;
+    gap: 6px;
+  }
+
+  .lang-option:hover,
+  .lang-option:focus {
+    background-color: transparent;
+    color: #0085a1;
+  }
+
+  .lang-flag {
+    font-size: 14px;
+  }
+
+  /* Separator above the language section */
+  .language-switcher-nav {
+    border-top: 1px solid #eaeaea;
+  }
 }
 
 /* --- Timeline Page --- */
@@ -1163,19 +1204,6 @@ td.gutter {
 }
 }
 
-/* Mobile: dropdown opens upward so it doesn't go off-screen */
-@media (max-width: 767px) {
-  .language-switcher-nav {
-    border-top: 1px solid #eaeaea;
-    padding: 8px 15px;
-  }
-
-  .lang-dropdown-menu {
-    top: auto;
-    bottom: calc(100% + 6px);
-    right: 0;
-  }
-}
 
 /* Language filter info */
 .language-filter-info {
