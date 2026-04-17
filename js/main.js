@@ -334,28 +334,19 @@ var main = {
       }
     };
     
-    // Update language switcher display and highlight current language
+    // Update language switcher: mark the active option in the dropdown
     var updateLanguageSwitcher = function(lang) {
-      $('.language-switcher-link').each(function() {
-        var $current = $(this).find('.current-lang');
-        var $other = $(this).find('.other-lang');
-        var $link = $(this);
-        
-        // Remove previous highlighting
-        $current.removeClass('active');
-        $other.removeClass('active');
-        
-        if (lang === 'en') {
-          $current.text('EN');
-          $other.text('VI');
-          $current.addClass('active');
+      $('.lang-option').each(function() {
+        var optLang = $(this).attr('data-lang');
+        if (optLang === lang) {
+          $(this).addClass('lang-option-active');
+          $(this).find('.lang-check').text('✓');
         } else {
-          $current.text('VI');
-          $other.text('EN');
-          $current.addClass('active');
+          $(this).removeClass('lang-option-active');
+          $(this).find('.lang-check').text('');
         }
-        $link.attr('data-current-lang', lang);
       });
+      $('.lang-dropdown[data-mode="selector"]').attr('data-current-lang', lang);
     };
     
     // Detect current page language from URL
@@ -420,12 +411,54 @@ var main = {
       }
     };
     
-    // Handle language selector clicks
-    $(document).on('click', '.language-switcher-link[data-lang-selector="true"]', function(e) {
+    // Toggle the language dropdown open/closed
+    $(document).on('click', '.lang-dropdown-btn', function(e) {
+      e.stopPropagation();
+      var $menu = $(this).siblings('.lang-dropdown-menu');
+      var isOpen = $menu.hasClass('open');
+      // Close any other open dropdowns
+      $('.lang-dropdown-menu.open').removeClass('open');
+      $('.lang-dropdown-btn').attr('aria-expanded', 'false');
+      if (!isOpen) {
+        $menu.addClass('open');
+        $(this).attr('aria-expanded', 'true');
+      }
+    });
+
+    // Close dropdown when clicking outside
+    $(document).on('click', function(e) {
+      if (!$(e.target).closest('.lang-dropdown').length) {
+        $('.lang-dropdown-menu.open').removeClass('open');
+        $('.lang-dropdown-btn').attr('aria-expanded', 'false');
+      }
+    });
+
+    // Handle clicks on language options
+    $(document).on('click', '.lang-dropdown .lang-option', function(e) {
       e.preventDefault();
-      var currentLang = $(this).attr('data-current-lang') || getLanguagePreference();
-      var newLang = currentLang === 'en' ? 'vi' : 'en';
-      
+      var $option = $(this);
+      var newLang = $option.attr('data-lang');
+      var $dropdown = $option.closest('.lang-dropdown');
+      var mode = $dropdown.attr('data-mode');
+
+      // Close the dropdown
+      $dropdown.find('.lang-dropdown-menu').removeClass('open');
+      $dropdown.find('.lang-dropdown-btn').attr('aria-expanded', 'false');
+
+      // Already on this language — nothing to do
+      if ($option.hasClass('lang-option-active')) {
+        return;
+      }
+
+      if (mode === 'direct') {
+        // Navigate to the other language version
+        var href = $option.attr('href');
+        setLanguagePreference(newLang);
+        window.location.href = href;
+        return;
+      }
+
+      // Selector mode: filter/redirect without full page navigation
       var seriesRoot = document.querySelector('.series-detail[data-series-detail="true"]');
       if (seriesRoot) {
         var targetAvailable = newLang === 'en'
@@ -446,51 +479,29 @@ var main = {
           return;
         }
       }
-      
-      // Update preference
+
       setLanguagePreference(newLang);
-      
-      // Filter posts on home page
       filterPosts(newLang, false);
-      
       filterSeriesDetailPosts(newLang);
-      
-      // Update all language switchers
       updateLanguageSwitcher(newLang);
-      
-      // Handle page redirects for aboutme, openlearning, series, and timeline
+
       var currentPath = window.location.pathname;
-      // Only handle series list pages, not series detail pages (which are in /series/ subdirectory)
       if (currentPath.includes('/aboutme') || currentPath.includes('/openlearning')) {
         var pageMatch = currentPath.match(/(aboutme|openlearning)(?:-(\w+))?\.html$/);
         if (pageMatch) {
           var pageName = pageMatch[1];
-          var newPath = '/' + pageName + '-' + newLang + '.html';
-          window.location.href = newPath;
+          window.location.href = '/' + pageName + '-' + newLang + '.html';
           return;
         }
       }
-      // Handle series list pages specifically (series-vi.html, series-en.html, series.html, /series/)
       if (currentPath.match(/^\/series(-(vi|en))?\.html$/) || currentPath === '/series/' || currentPath === '/series') {
-        var newPath = '/series-' + newLang + '.html';
-        window.location.href = newPath;
+        window.location.href = '/series-' + newLang + '.html';
         return;
       }
-      // Handle timeline pages specifically (timeline-vi.html, timeline-en.html, timeline.html, /timeline/)
       if (currentPath.match(/^\/timeline(-(vi|en))?\.html$/) || currentPath === '/timeline/' || currentPath === '/timeline') {
-        var newPath = '/timeline-' + newLang + '.html';
-        window.location.href = newPath;
+        window.location.href = '/timeline-' + newLang + '.html';
         return;
       }
-    });
-    
-    // Handle language switch links (for posts/pages with both versions)
-    $(document).on('click', '.language-switcher-link[data-lang-switch="true"]', function(e) {
-      // Let the link work normally, but also update preference
-      var href = $(this).attr('href');
-      var targetLang = (href.includes('-en.html') || href.includes('-en/')) ? 'en' : 'vi';
-      setLanguagePreference(targetLang);
-      // Link will navigate, so preference is saved for next page
     });
     
     // Detect current page language and update preference

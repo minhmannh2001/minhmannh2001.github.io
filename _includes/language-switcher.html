@@ -1,4 +1,4 @@
-{% comment %} 
+{% comment %}
   Global Language Switcher - Shows on all pages
   For posts: switches to other language version if available
   For other pages: sets language preference for filtering
@@ -32,7 +32,7 @@
   {% assign filename = current_path | split: '/' | last %}
   {% assign other_lang = '' %}
   {% assign base_name_without_lang = '' %}
-  
+
   {% if filename contains '-en.markdown' %}
     {% assign detected_lang = 'en' %}
     {% assign base_name_without_lang = filename | replace: '-en.markdown', '' %}
@@ -50,7 +50,7 @@
     {% assign base_name_without_lang = filename | replace: '-vi.md', '' %}
     {% assign other_lang = 'en' %}
   {% endif %}
-  
+
   {% if base_name_without_lang != '' %}
     {% comment %} First check site.posts (for actual posts) {% endcomment %}
     {% for post in site.posts %}
@@ -68,7 +68,7 @@
       {% else %}
         {% assign post_base_name = '' %}
       {% endif %}
-      
+
       {% if post_base_name == base_name_without_lang and post_base_name != '' %}
         {% assign post_lang = '' %}
         {% if post_filename contains '-en.markdown' or post_filename contains '-en.md' %}
@@ -76,7 +76,7 @@
         {% elsif post_filename contains '-vi.markdown' or post_filename contains '-vi.md' %}
           {% assign post_lang = 'vi' %}
         {% endif %}
-        
+
         {% if post_lang == other_lang %}
           {% assign has_specific_link = true %}
           {% assign other_version_url = post.url | prepend: site.baseurl | replace: '//', '/' %}
@@ -84,7 +84,7 @@
         {% endif %}
       {% endif %}
     {% endfor %}
-    
+
     {% comment %} If not found in posts, check site.pages (for pages using post layout) {% endcomment %}
     {% unless has_specific_link %}
       {% for site_page in site.pages %}
@@ -98,7 +98,7 @@
         {% else %}
           {% assign page_base_name = '' %}
         {% endif %}
-        
+
         {% if page_base_name == base_name_without_lang and page_base_name != '' %}
           {% assign page_lang = '' %}
           {% if page_filename contains '-en.md' %}
@@ -106,7 +106,7 @@
           {% elsif page_filename contains '-vi.md' %}
             {% assign page_lang = 'vi' %}
           {% endif %}
-          
+
           {% if page_lang == other_lang %}
             {% assign has_specific_link = true %}
             {% if site_page.permalink %}
@@ -125,7 +125,7 @@
   {% assign page_filename = page.path | split: '/' | last %}
   {% assign page_base_name = page_filename %}
   {% assign page_other_lang = '' %}
-  
+
   {% comment %} First check permalink (for HTML files like series-vi.html, timeline-vi.html) {% endcomment %}
   {% if page.permalink %}
     {% if page.permalink == '/series-en.html' %}
@@ -154,7 +154,7 @@
       {% assign page_other_lang = 'en' %}
     {% endif %}
   {% endif %}
-  
+
   {% comment %} If not found in permalink, check filename {% endcomment %}
   {% unless page_other_lang != '' %}
     {% if page_filename contains '-en.md' %}
@@ -175,7 +175,7 @@
       {% assign page_other_lang = 'en' %}
     {% endif %}
   {% endunless %}
-  
+
   {% if page_base_name != '' and page_other_lang != '' %}
     {% comment %} Try to find the other language version {% endcomment %}
     {% if page.permalink or page_filename contains '.html' %}
@@ -183,7 +183,7 @@
     {% else %}
       {% assign other_page_filename = page_base_name | append: '-' | append: page_other_lang | append: '.md' %}
     {% endif %}
-    
+
     {% for site_page in site.pages %}
       {% comment %} Check by permalink first (most reliable) {% endcomment %}
       {% if site_page.permalink == other_page_permalink %}
@@ -214,17 +214,70 @@
   {% endif %}
 {% endif %}
 
-{% comment %} Always show language switcher {% endcomment %}
-{% if has_specific_link %}
-  <li class="language-switcher-nav">
-    <a href="{{ other_version_url }}" class="language-switcher-link" data-lang-switch="true" data-current-lang="{{ detected_lang }}" title="Switch to {% if detected_lang == 'en' %}Vietnamese{% else %}English{% endif %}">
-      <span class="current-lang">{% if detected_lang == 'en' %}EN{% else %}VI{% endif %}</span> / <span class="other-lang">{% if detected_lang == 'en' %}VI{% else %}EN{% endif %}</span>
-    </a>
-  </li>
-{% else %}
-  <li class="language-switcher-nav">
-    <a href="#" class="language-switcher-link" data-lang-selector="true" data-current-lang="{{ detected_lang }}" title="Select language">
-      <span class="current-lang">{% if detected_lang == 'en' %}EN{% else %}VI{% endif %}</span> / <span class="other-lang">{% if detected_lang == 'en' %}VI{% else %}EN{% endif %}</span>
-    </a>
-  </li>
-{% endif %}
+{% comment %} Render globe-icon dropdown language switcher {% endcomment %}
+<li class="language-switcher-nav">
+  {% if has_specific_link %}
+  <div class="lang-dropdown" data-mode="direct">
+  {% else %}
+  <div class="lang-dropdown" data-mode="selector" data-current-lang="{{ detected_lang }}">
+  {% endif %}
+    <button class="lang-dropdown-btn" aria-haspopup="true" aria-expanded="false" title="Select language">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="2" y1="12" x2="22" y2="12"/>
+        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+      </svg>
+    </button>
+    <ul class="lang-dropdown-menu" role="menu">
+      {% if has_specific_link %}
+        {% if detected_lang == 'en' %}
+        <li role="menuitem">
+          <a href="#" class="lang-option lang-option-active" data-lang="en">
+            <span class="lang-flag">🇬🇧</span><span class="lang-label">English</span><span class="lang-check">✓</span>
+          </a>
+        </li>
+        <li role="menuitem">
+          <a href="{{ other_version_url }}" class="lang-option" data-lang="vi">
+            <span class="lang-flag">🇻🇳</span><span class="lang-label">Tiếng Việt</span><span class="lang-check"></span>
+          </a>
+        </li>
+        {% else %}
+        <li role="menuitem">
+          <a href="{{ other_version_url }}" class="lang-option" data-lang="en">
+            <span class="lang-flag">🇬🇧</span><span class="lang-label">English</span><span class="lang-check"></span>
+          </a>
+        </li>
+        <li role="menuitem">
+          <a href="#" class="lang-option lang-option-active" data-lang="vi">
+            <span class="lang-flag">🇻🇳</span><span class="lang-label">Tiếng Việt</span><span class="lang-check">✓</span>
+          </a>
+        </li>
+        {% endif %}
+      {% else %}
+        {% if detected_lang == 'en' %}
+        <li role="menuitem">
+          <a href="#" class="lang-option lang-option-active" data-lang="en">
+            <span class="lang-flag">🇬🇧</span><span class="lang-label">English</span><span class="lang-check">✓</span>
+          </a>
+        </li>
+        <li role="menuitem">
+          <a href="#" class="lang-option" data-lang="vi">
+            <span class="lang-flag">🇻🇳</span><span class="lang-label">Tiếng Việt</span><span class="lang-check"></span>
+          </a>
+        </li>
+        {% else %}
+        <li role="menuitem">
+          <a href="#" class="lang-option" data-lang="en">
+            <span class="lang-flag">🇬🇧</span><span class="lang-label">English</span><span class="lang-check"></span>
+          </a>
+        </li>
+        <li role="menuitem">
+          <a href="#" class="lang-option lang-option-active" data-lang="vi">
+            <span class="lang-flag">🇻🇳</span><span class="lang-label">Tiếng Việt</span><span class="lang-check">✓</span>
+          </a>
+        </li>
+        {% endif %}
+      {% endif %}
+    </ul>
+  </div>
+</li>
