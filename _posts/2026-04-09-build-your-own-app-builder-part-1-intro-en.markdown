@@ -463,4 +463,4 @@ You now have a skeleton: routes, a database, and a create flow. Here is the orde
 
 ---
 
-*Next: [Part 2 — Files as source of truth: database schema and atomic project creation](https://github.com/minhmannh2001/minhmannh2001.github.io/blob/master/_posts/2026-04-10-build-your-own-app-builder-part-2-data-and-template.markdown).*
+*Next: [Part 2 — Files as source of truth: database schema and atomic project creation](https://github.com/minhmannh2001/minhmannh2001.github.io/blob/master/_posts/2026-04-10-build-your-own-app-builder-part-2-data-and-template-en.markdown).*
