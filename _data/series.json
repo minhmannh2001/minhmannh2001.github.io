@@ -51,6 +51,23 @@
     ]
   },
   {
+    "slug": "build-your-own-ai-app-builder",
+    "name": "Build your own X: A minimal AI app builder",
+    "description": "A 10-part practical series on building an AI app builder with Next.js, Prisma, and WebContainer. It covers streaming chat, parser safety, workspace context engineering, state synchronization, and in-browser preview infrastructure end to end.",
+    "posts": [
+      "/2026/04/09/build-your-own-app-builder-part-1-intro-en",
+      "/2026/04/10/build-your-own-app-builder-part-2-data-and-template-en",
+      "/2026/04/11/build-your-own-app-builder-part-3-message-model-and-prompt-en",
+      "/2026/04/12/build-your-own-app-builder-part-4-streaming-chat-endpoint-en",
+      "/2026/04/13/build-your-own-app-builder-part-5-parser-and-database-apply-en",
+      "/2026/04/14/build-your-own-app-builder-part-6-workspace-snapshot-en",
+      "/2026/04/15/build-your-own-app-builder-part-7-file-tree-and-file-api-en",
+      "/2026/04/16/build-your-own-app-builder-part-8-editor-state-and-sync-en",
+      "/2026/04/17/build-your-own-app-builder-part-9-chat-ui-and-ai-context-en",
+      "/2026/04/18/build-your-own-app-builder-part-10-webcontainer-preview-en"
+    ]
+  },
+  {
     "slug": "system-design-series",
     "name": "System Design Series",
     "description": "Exploring the architecture behind large-scale distributed systems. Learn about load balancers, caching strategies, database sharding, CDNs, and the fascinating engineering challenges of building systems that handle billions of requests daily.",
