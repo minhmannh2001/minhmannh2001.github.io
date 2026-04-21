@@ -32,12 +32,12 @@ DBDB sidesteps most of this complexity with one radical constraint: **tree nodes
 
 | Part | Core idea |
 |------|------------|
-| **0** | [Project setup]({% post_url 2026-04-21-build-dbdb-from-scratch-part-0-project-setup-en %}): `pyproject.toml`, smoke tests, pytest + BDD, Makefile |
-| **1** | [Append-only storage]({% post_url 2026-04-22-build-dbdb-from-scratch-part-1-append-only-storage-en %}): superblock, `write`/`read`, root commit, `flush`/`fsync`, locking |
-| **2** | [`ValueRef` and lazy loading]({% post_url 2026-04-23-build-dbdb-from-scratch-part-2-valueref-en %}): `get`/`store`, `BytesValueRef`, UTF-8 on disk |
+| **0** | [Project setup]({% post_url build-dbdb-from-scratch-part-0-project-setup-en %}): `pyproject.toml`, smoke tests, pytest + BDD, Makefile |
+| **1** | [Append-only storage]({% post_url build-dbdb-from-scratch-part-1-append-only-storage-en %}): superblock, `write`/`read`, root commit, `flush`/`fsync`, locking |
+| **2** | [`ValueRef` and lazy loading]({% post_url build-dbdb-from-scratch-part-2-valueref-en %}): `get`/`store`, `BytesValueRef`, UTF-8 on disk |
 | **3** (this post) | Immutable tree, copy-on-write, `BinaryNodeRef`, address-only serialization |
-| **4** (next) | [Logical layer: `LogicalBase` + `BinaryTree`]({% post_url 2026-04-25-build-dbdb-from-scratch-part-4-logical-layer-en %}): search, insert, delete, commit |
-| **Interlude** | [How all layers fit together]({% post_url 2026-04-26-build-dbdb-from-scratch-part-5-how-it-all-fits-en %}): one key write/read trace |
+| **4** (next) | [Logical layer: `LogicalBase` + `BinaryTree`]({% post_url build-dbdb-from-scratch-part-4-logical-layer-en %}): search, insert, delete, commit |
+| **Interlude** | [How all layers fit together]({% post_url build-dbdb-from-scratch-part-5-how-it-all-fits-en %}): one key write/read trace |
 
 ---
 

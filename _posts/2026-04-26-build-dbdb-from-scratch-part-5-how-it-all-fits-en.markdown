@@ -30,11 +30,11 @@ edges.
 
 | Part | Core idea |
 |------|------------|
-| **0** | [Project setup]({% post_url 2026-04-21-build-dbdb-from-scratch-part-0-project-setup-en %}) |
-| **1** | [Append-only storage]({% post_url 2026-04-22-build-dbdb-from-scratch-part-1-append-only-storage-en %}) |
-| **2** | [`ValueRef` and lazy loading]({% post_url 2026-04-23-build-dbdb-from-scratch-part-2-valueref-en %}) |
-| **3** | [Immutable tree and `BinaryNodeRef`]({% post_url 2026-04-24-build-dbdb-from-scratch-part-3-immutable-tree-en %}) |
-| **4** | [Logical layer: `LogicalBase` + `BinaryTree`]({% post_url 2026-04-25-build-dbdb-from-scratch-part-4-logical-layer-en %}) |
+| **0** | [Project setup]({% post_url build-dbdb-from-scratch-part-0-project-setup-en %}) |
+| **1** | [Append-only storage]({% post_url build-dbdb-from-scratch-part-1-append-only-storage-en %}) |
+| **2** | [`ValueRef` and lazy loading]({% post_url build-dbdb-from-scratch-part-2-valueref-en %}) |
+| **3** | [Immutable tree and `BinaryNodeRef`]({% post_url build-dbdb-from-scratch-part-3-binarynode-en %}) |
+| **4** | [Logical layer: `LogicalBase` + `BinaryTree`]({% post_url build-dbdb-from-scratch-part-4-logical-layer-en %}) |
 | **Interlude** (this post) | End-to-end write/read trace for one key |
 
 ---

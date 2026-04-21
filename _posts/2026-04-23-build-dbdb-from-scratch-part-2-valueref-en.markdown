@@ -27,8 +27,8 @@ In DBDB, this principle lives in a class called `ValueRef`.
 
 | Part | Core idea |
 |------|------------|
-| **0** | [Project setup]({% post_url 2026-04-21-build-dbdb-from-scratch-part-0-project-setup-en %}): `pyproject.toml`, smoke tests, pytest + BDD, Makefile |
-| **1** | [Append-only storage]({% post_url 2026-04-22-build-dbdb-from-scratch-part-1-append-only-storage-en %}): superblock, `write`/`read`, root commit, `flush`/`fsync`, locking |
+| **0** | [Project setup]({% post_url build-dbdb-from-scratch-part-0-project-setup-en %}): `pyproject.toml`, smoke tests, pytest + BDD, Makefile |
+| **1** | [Append-only storage]({% post_url build-dbdb-from-scratch-part-1-append-only-storage-en %}): superblock, `write`/`read`, root commit, `flush`/`fsync`, locking |
 | **2** (this post) | `ValueRef`: lazy `get`, idempotent `store`, `BytesValueRef`, UTF-8 on disk |
 | **3** (next) | Immutable binary search tree; `BinaryNodeRef` |
 

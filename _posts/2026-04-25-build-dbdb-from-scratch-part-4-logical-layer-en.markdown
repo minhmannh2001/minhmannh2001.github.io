@@ -42,10 +42,10 @@ lives one level down, in `BinaryTree`.
 
 | Part | Core idea |
 |------|------------|
-| **0** | [Project setup]({% post_url 2026-04-21-build-dbdb-from-scratch-part-0-project-setup-en %}): `pyproject.toml`, smoke tests, pytest + BDD, Makefile |
-| **1** | [Append-only storage]({% post_url 2026-04-22-build-dbdb-from-scratch-part-1-append-only-storage-en %}): superblock, `write`/`read`, root commit, `flush`/`fsync`, locking |
-| **2** | [`ValueRef` and lazy loading]({% post_url 2026-04-23-build-dbdb-from-scratch-part-2-valueref-en %}): `get`/`store`, `BytesValueRef`, UTF-8 on disk |
-| **3** | [Immutable tree and `BinaryNodeRef`]({% post_url 2026-04-24-build-dbdb-from-scratch-part-3-immutable-tree-en %}): copy-on-write, node serialization, lazy children |
+| **0** | [Project setup]({% post_url build-dbdb-from-scratch-part-0-project-setup-en %}): `pyproject.toml`, smoke tests, pytest + BDD, Makefile |
+| **1** | [Append-only storage]({% post_url build-dbdb-from-scratch-part-1-append-only-storage-en %}): superblock, `write`/`read`, root commit, `flush`/`fsync`, locking |
+| **2** | [`ValueRef` and lazy loading]({% post_url build-dbdb-from-scratch-part-2-valueref-en %}): `get`/`store`, `BytesValueRef`, UTF-8 on disk |
+| **3** | [Immutable tree and `BinaryNodeRef`]({% post_url build-dbdb-from-scratch-part-3-binarynode-en %}): copy-on-write, node serialization, lazy children |
 | **4** (this post) | `LogicalBase` lifecycle + `BinaryTree` algorithms (`_get`, `_insert`, `_delete`) |
 | **5** (next) | End-to-end flow: how all layers work together |
 
