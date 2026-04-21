@@ -27,6 +27,7 @@ Inspired by the book chapter, this series is my own rebuild: I get stuck, fix th
 |------|------------|
 | **0** (this post) | `pyproject.toml`, smoke import test, pytest + BDD, Makefile |
 | **1** | [Append-only storage and an atomic root pointer]({% post_url 2026-04-22-build-dbdb-from-scratch-part-1-append-only-storage-en %}) |
+| **2** | [`ValueRef` and lazy loading]({% post_url 2026-04-23-build-dbdb-from-scratch-part-2-valueref-en %}) |
 
 ---
 

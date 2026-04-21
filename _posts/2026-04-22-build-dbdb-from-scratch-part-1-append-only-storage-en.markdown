@@ -27,7 +27,8 @@ Most databases spend enormous effort solving this problem. DBDB solves it with a
 |------|------------|
 | **0** | [Project setup]({% post_url 2026-04-21-build-dbdb-from-scratch-part-0-project-setup-en %}): `pyproject.toml`, smoke tests, pytest + BDD, Makefile |
 | **1** (this post) | Superblock, append-only `write`/`read`, root commit, `flush`/`fsync`, file locking |
-| **2** (next) | Lazy references — read part of a tree without loading all of it |
+| **2** | [`ValueRef` and lazy loading]({% post_url 2026-04-23-build-dbdb-from-scratch-part-2-valueref-en %}): `get`/`store`, `BytesValueRef`, UTF-8 |
+| **3** (next) | Immutable binary search tree; `BinaryNodeRef` |
 
 ---
 
