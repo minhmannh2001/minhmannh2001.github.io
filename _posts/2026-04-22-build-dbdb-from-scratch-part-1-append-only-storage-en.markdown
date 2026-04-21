@@ -25,9 +25,9 @@ Most databases spend enormous effort solving this problem. DBDB solves it with a
 
 | Part | Core idea |
 |------|------------|
-| **0** | [Project setup]({% post_url build-dbdb-from-scratch-part-0-project-setup-en %}): `pyproject.toml`, smoke tests, pytest + BDD, Makefile |
+| **0** | [Project setup](https://minhmannh2001.github.io/2026/04/21/build-dbdb-from-scratch-part-0-project-setup-en.html): `pyproject.toml`, smoke tests, pytest + BDD, Makefile |
 | **1** (this post) | Superblock, append-only `write`/`read`, root commit, `flush`/`fsync`, file locking |
-| **2** | [`ValueRef` and lazy loading]({% post_url build-dbdb-from-scratch-part-2-valueref-en %}): `get`/`store`, `BytesValueRef`, UTF-8 |
+| **2** | [`ValueRef` and lazy loading](https://minhmannh2001.github.io/2026/04/23/build-dbdb-from-scratch-part-2-valueref-en.html): `get`/`store`, `BytesValueRef`, UTF-8 |
 | **3** (next) | Immutable binary search tree; `BinaryNodeRef` |
 
 ---
