@@ -27,26 +27,7 @@ This post is about the 80%.
 
 My original post described a system built around two concurrent pipelines.
 
-```mermaid
-flowchart LR
-    subgraph Ingestion["Data Ingestion Pipeline"]
-        direction TB
-        F[URL Frontier\nSQS FIFO Queues] --> C[Crawler Fleet\n10,000 ECS Nodes]
-        C --> P[Processing\nParse · Hash · Index]
-        P --> F
-    end
-
-    subgraph Query["Query Pipeline"]
-        direction TB
-        U[User] --> AG[API Gateway]
-        AG --> L[Search Lambda]
-        L --> OS[Text Index\nOpenSearch]
-        L --> DB[Metadata\nDynamoDB]
-    end
-
-    P --> OS
-    P --> DB
-```
+![System overview: Data Ingestion Pipeline and Query Pipeline](/img/retrospective-theory-vs-practice/01-system-overview.png)
 
 **Data Ingestion**: A URL Frontier manages a prioritized queue of URLs to crawl. A crawler fleet fetches those pages, checks each site's `robots.txt` rules to know what it's allowed to access, and publishes the raw HTML to a message bus. A processing function then parses each page, checks whether it's a duplicate, stores it, and indexes every word into a searchable database. Any new links found on the page get added back to the queue — keeping the cycle going.
 
@@ -68,24 +49,7 @@ CloudFormation is AWS's way of defining infrastructure as code — you describe 
 
 They must be deployed in a specific order because each layer depends on the one before it:
 
-```mermaid
-graph TD
-    S00[00-base] --> S01[01-s3]
-    S01 --> S02[02-dynamodb]
-    S01 --> S04[04-sns]
-    S04 --> S03[03-sqs]
-    S03 --> S05[05-opensearch]
-    S05 --> S06[06-elasticache]
-    S06 --> S08[08-ssm]
-    S08 --> S09[09-ecr]
-    S09 --> S10p[10-lambda-processing]
-    S09 --> S11[11-lambda-frontier]
-    S09 --> S10e[10-ecs ⚠️]
-    S10p --> S12[12-search-api]
-    S12 --> S13[13-cloudwatch-alarms]
-
-    style S10e fill:#f9a,stroke:#c00
-```
+<img src="/img/retrospective-theory-vs-practice/02-cloudformation-stacks.png" alt="CloudFormation stack deployment order" style="max-width: 55%; display: block; margin: 0 auto;">
 
 In plain terms, the stacks build up like this:
 - **00–01**: Networking foundations and file storage (S3)
@@ -124,35 +88,9 @@ A React 18 + Vite + Tailwind CSS frontend — a search bar, result cards with ti
 
 **What the theory said**: Build a two-tier queuing system with a **Heap** data structure at the center. The heap tracks the next permissible crawl time for each host and issues exclusive locks — only one crawler at a time gets access to a given host. When it's done, it releases the lock and the heap grants it to the next crawler waiting for that host.
 
-```mermaid
-flowchart TB
-    subgraph Theory["Theory: Two-Tier + Heap"]
-        direction TB
-        IN[Incoming URLs] --> PQ["Priority Queues\nP1 / P2 / P3"]
-        PQ -- "biased selector\n50% P1 · 30% P2 · 20% P3" --> R[Router]
-        R --> HQ1[example.com queue]
-        R --> HQ2[news.com queue]
-        R --> HQ3["... N host queues"]
-        HP[Heap\ndistributed lock\nnext-crawl timestamps] --> HQ1
-        HP --> HQ2
-        HP --> HQ3
-        HQ1 --> CR[Crawler]
-        HQ2 --> CR
-        CR -- release lock --> HP
-    end
-```
+<img src="/img/retrospective-theory-vs-practice/03-frontier-theory-heap.png" alt="Theory: Two-Tier URL Frontier with Heap" style="max-width: 55%; display: block; margin: 0 auto;">
 
-```mermaid
-flowchart LR
-    subgraph Practice["Practice: SQS FIFO + MessageGroupId"]
-        direction TB
-        URL[URL] --> CL[PriorityClassifier]
-        CL -- P1 --> Q1["url-frontier-p1.fifo\nMessageGroupId = hostname"]
-        CL -- P2 --> Q2["url-frontier-p2.fifo\nMessageGroupId = hostname"]
-        CL -- P3 --> Q3["url-frontier-p3.fifo\nMessageGroupId = hostname"]
-        Q1 -- "one message per host\nin-flight at a time" --> CR[Crawler]
-    end
-```
+![Practice: SQS FIFO with MessageGroupId](/img/retrospective-theory-vs-practice/04-frontier-practice-sqs.png)
 
 **What I built**: Three SQS FIFO queues (FIFO = First In, First Out — messages are delivered in the order they arrive). The `FrontierClient` classifies each URL by domain and path, then enqueues it using `MessageGroupId = hostname`.
 
@@ -307,17 +245,7 @@ Every website can publish a `robots.txt` file at its root (e.g., `https://exampl
 
 **What I built**: Two cache levels in a single Python class, accessed in order:
 
-```mermaid
-flowchart LR
-    CR[Crawler] -->|can_fetch?| L1["1. In-memory dict\n_parsers[domain]"]
-    L1 -- miss --> L2["2. Redis\nGET robots:{domain}\nTTL 3600s"]
-    L2 -- miss --> L3["3. Network\nGET https://domain/robots.txt"]
-    L3 -->|write| L2
-    L2 -->|write| L1
-    L1 -- hit --> OK[allow / deny]
-    L2 -- hit --> OK
-    L3 -- hit --> OK
-```
+![robots.txt two-level cache: in-memory → Redis → network](/img/retrospective-theory-vs-practice/05-robots-cache.png)
 
 ```python
 # src/crawler/robots_fetcher.py
@@ -359,18 +287,7 @@ The theory's "dedicated component" is this class. The two-level cache isn't a si
 
 **What I built**: A seven-step pipeline where each step is a separate module:
 
-```mermaid
-flowchart TD
-    SNS[SNS Event] --> H[Lambda Handler]
-    H --> P1["1. html_parser.py\nBeautifulSoup4\n→ title, description, links"]
-    P1 --> P2["2. hasher.py\nSHA-256 of raw HTML"]
-    P2 --> P3{"3. is_duplicate?\nDynamoDB GSI\nhash-index"}
-    P3 -- duplicate --> SKIP[Skip — stop processing]
-    P3 -- new --> P4["4. s3_writer.py\nraw HTML → s3://raw-pages/url"]
-    P4 --> P5["5. dynamo_writer.py\nupsert metadata record"]
-    P5 --> P6["6. opensearch_indexer.py\ntokenize → bulk index\none doc per (word, url)"]
-    P6 --> P7["7. link_enqueuer.py\ndiscovered links → SQS frontier"]
-```
+<img src="/img/retrospective-theory-vs-practice/06-processing-pipeline.png" alt="Processing pipeline: 7 steps from SNS event to link re-enqueue" style="max-width: 55%; display: block; margin: 0 auto;">
 
 The deduplication check (step 3) replaces the theory's "Global Hash Index". Instead of a separate database for hashes, this uses a secondary index on the existing pages table — same O(1) lookup speed, one fewer infrastructure component to maintain:
 
@@ -415,24 +332,7 @@ This is how ranking works in practice: when someone searches for "python", the q
 
 **What I built**: API Gateway → Lambda → four functions:
 
-```mermaid
-sequenceDiagram
-    participant Browser
-    participant APIGW as API Gateway
-    participant Lambda as Search Lambda
-    participant OS as OpenSearch
-    participant DDB as DynamoDB
-
-    Browser->>APIGW: GET /search?q=python&page=1
-    APIGW->>Lambda: event (raw HTTP)
-    Lambda->>Lambda: validate_and_normalize_query()
-    Lambda->>OS: match word="python"\nsort by frequency desc
-    OS-->>Lambda: [url1, url2, url3, ...]
-    Lambda->>DDB: batch_get_item(url1, url2, url3)
-    DDB-->>Lambda: {url: {title, description}}
-    Lambda-->>APIGW: {results[], total, page, total_pages}
-    APIGW-->>Browser: 200 OK + CORS headers
-```
+![Search API sequence: Browser → API Gateway → Lambda → OpenSearch → DynamoDB](/img/retrospective-theory-vs-practice/07-search-api-sequence.png)
 
 ```python
 # src/search/handler.py
@@ -583,16 +483,7 @@ This was the most frustrating moment of the project. I'd written weeks of crawle
 
 Without the crawler running, the entire pipeline collapses:
 
-```mermaid
-flowchart LR
-    F[Frontier\n✅ Works] --> C["Crawler\n❌ ECS blocked\n(LocalStack Pro only)"]
-    C --> P["Processing Lambda\n✅ Works\nbut never triggered"]
-    P --> OS["OpenSearch\n✅ Works\nbut empty"]
-    OS --> S["Search API\n✅ Works\nbut returns nothing"]
-    S --> R[React Frontend\n✅ Works\nbut shows nothing]
-
-    style C fill:#f9a,stroke:#c00,color:#000
-```
+<img src="/img/retrospective-theory-vs-practice/08-pipeline-status.png" alt="Pipeline status: Crawler blocked at ECS, all downstream components idle" style="max-width: 100%; display: block; margin: 0 auto; min-height: 80px; object-fit: contain;">
 
 I eventually split the ECS stack into a separate `make infra-deploy-pro` target and documented the blocker clearly. But finishing the project from there would have meant either:
 
