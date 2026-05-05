@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "I Tried to Build the Distributed Search Engine from My Own Blog Post. Here's What Happened."
-date: '2026-05-05 12:00'
+date: '2026-05-05 00:00'
 excerpt: >-
   A few months ago I wrote a system design post about how to build a 100-billion-page distributed
   search engine. Then I actually tried to build it on AWS. This is the honest account of where the

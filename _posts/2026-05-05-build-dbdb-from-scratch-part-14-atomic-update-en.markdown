@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "Build DBDB from scratch — Part 14: Atomic, thread-safe updates"
-date: '2026-05-05 12:00'
+date: '2026-05-05 00:00'
 excerpt: >-
   A fifty-thread benchmark test reveals a lost update problem. This post adds a pessimistic `DBDB.update()` to provide atomic read-modify-write, then debugs three concurrency bugs that only appear with threads: fcntl locks being per-process, Python's I/O buffer hiding external writes, and overlapping object IDs in tests. It finishes by implementing and benchmarking an optimistic locking alternative that uses the root address as a version number.
 comments: false
