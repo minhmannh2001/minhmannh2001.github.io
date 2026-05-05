@@ -1,0 +1,722 @@
+---
+layout: post
+title: "MIT 6.5840 Lab 4A: From Raft to Replicated State Machine — The Story of a Middle Layer"
+date: 2026-05-05 00:00:00 +0700
+excerpt: >
+  Raft guarantees that a command will be committed on a majority of servers. But "committed" isn't the same as "executed." Lab 4A is the journey of building the middle layer — the RSM — that turns Raft's promises into actual results returned to clients.
+comments: true
+---
+
+After finishing Lab 3 with a fully working Raft implementation, I thought the hard part was over. Raft already handled leader election, log replication, partitions, and snapshots. What remained was just "use Raft to build a key/value store" — should be straightforward, right?
+
+Lab 4A taught me something important: **Raft only promises that a command will be committed. It doesn't promise to hand you the result.**
+
+The layer that bridges that gap is the **Replicated State Machine (RSM)** — and this post is the story of building it.
+
+---
+
+## The big picture: what Raft does, and where it stops
+
+Before writing any code, it's worth being precise about what Raft does and where it leaves off.
+
+When a client wants to perform an operation (say, increment a counter), the request needs to travel through several layers:
+
+```
+Client
+  │
+  │  "Increment the counter"
+  ▼
+Service Layer  (key/value store, counter service, etc.)
+  │
+  │  "Raft, please make sure this command gets committed"
+  ▼
+Raft
+  │
+  ├─▶ Leader appends to log
+  ├─▶ Replicates to followers
+  ├─▶ Majority agrees → COMMIT
+  │
+  │  "Committed at index 5"
+  ▼
+Service Layer  (execute command, update state)
+  │
+  │  "counter = 5, here's your result"
+  ▼
+Client
+```
+
+Raft handles the **commit** step: the command will be durably recorded on a majority of servers and will never be lost. But Raft has no idea what "increment counter" means — it just stores a blob of data in the log.
+
+**RSM is the bridge**: it listens to Raft's "committed" signal, executes the command on the state machine, and delivers the result back to the waiting client.
+
+---
+
+## RSM architecture
+
+In this lab, RSM is designed to be **generic** — it knows nothing about business logic. Whether you're building a counter service or a full key/value store, you just implement the `StateMachine` interface:
+
+```go
+type StateMachine interface {
+    DoOp(any) any      // execute a command, return the result
+    Snapshot() []byte  // capture a snapshot of current state
+    Restore([]byte)    // restore state from a snapshot
+}
+```
+
+RSM's job then becomes:
+
+```
+Client (goroutine)
+     │
+     │  rsm.Submit(req)  ← blocking call
+     │
+     ▼
+  RSM.Submit()
+     │  rf.Start(op)         → hand op to Raft
+     │  pending[index] = ch  → register a "rendezvous" at this index
+     │  <-ch                 ← block, wait for reader to signal
+     │
+     │                    RSM.reader() [background goroutine]
+     │                         │
+     │                         │  for msg := range applyCh
+     │                         │  DoOp(msg.Command)
+     │                         │  ch <- result
+     │                         │
+     ◀────────────────────────┘
+     │
+     │  return (OK, result)
+     ▼
+Client receives result
+```
+
+Two goroutines — `Submit` and `reader` — communicate through a channel, using the **Raft log index** as their shared meeting point.
+
+---
+
+## Phase 1: Laying the foundation
+
+Start with the bare minimum: declare the struct and spin up the reader goroutine.
+
+### The Op struct — an envelope for commands
+
+Every command sent to Raft needs to be wrapped in an `Op`:
+
+```go
+type Op struct {
+    UniqueID int64  // unique ID, used to verify "is this my op?"
+    Req      any    // the actual command (Inc{}, Get{}, Put{}, etc.)
+}
+```
+
+`UniqueID` becomes important in Phase 3 — more on that shortly.
+
+### The reader goroutine — RSM's ear
+
+`reader()` runs in the background, listening to `applyCh` — the channel Raft uses to signal "this op has been committed":
+
+```go
+func (rsm *RSM) reader() {
+    for msg := range rsm.applyCh {
+        if !msg.CommandValid {
+            continue
+        }
+        op := msg.Command.(Op)
+        result := rsm.sm.DoOp(op.Req)  // execute on the state machine
+        // Phase 1: just call DoOp, don't do anything with result yet
+    }
+}
+```
+
+At this point `Submit()` still returns `ErrWrongLeader` immediately — no blocking yet. But the critical thing is that **DoOp gets called**: Raft sends a message, reader receives it, the state machine updates. The replication layer is working.
+
+---
+
+## Phase 2: Submit needs to wait
+
+The fundamental problem with Phase 1: Submit returns immediately without a real result. Clients need the actual result, after Raft has committed.
+
+### The "rendezvous" mechanism — the pending map
+
+Submit and reader are two independent goroutines. To make them communicate, we use a map:
+
+```go
+type pendingOp struct {
+    uniqueID int64
+    ch       chan waitResult  // buffer=1, so reader never blocks when sending
+}
+
+// In the RSM struct:
+pending map[int]pendingOp  // key = log index
+```
+
+Why is the key the **log index**? Because that's the only thing both sides know:
+- Submit calls `rf.Start(op)` → gets back `index`.
+- Reader reads from applyCh → gets `msg.CommandIndex`.
+
+### The new Submit — block and wait
+
+```go
+func (rsm *RSM) Submit(req any) (rpc.Err, any) {
+    id := atomic.AddInt64(&rsm.nextID, 1)
+    op := Op{UniqueID: id, Req: req}
+
+    index, _, isLeader := rsm.rf.Start(op)
+    if !isLeader {
+        return rpc.ErrWrongLeader, nil
+    }
+
+    ch := make(chan waitResult, 1)  // buffer=1: reader never blocks
+    rsm.mu.Lock()
+    rsm.pending[index] = pendingOp{uniqueID: id, ch: ch}
+    rsm.mu.Unlock()
+
+    result := <-ch  // ← BLOCK here, wait for reader
+    return result.err, result.val
+}
+```
+
+### The new reader — deliver the result
+
+```go
+func (rsm *RSM) reader() {
+    for msg := range rsm.applyCh {
+        if !msg.CommandValid { continue }
+        op := msg.Command.(Op)
+        result := rsm.sm.DoOp(op.Req)
+
+        rsm.mu.Lock()
+        pw, ok := rsm.pending[msg.CommandIndex]
+        delete(rsm.pending, msg.CommandIndex)
+        rsm.mu.Unlock()
+
+        if ok {
+            pw.ch <- waitResult{err: rpc.OK, val: result}
+        }
+    }
+}
+```
+
+At this point `TestBasic4A` and `TestConcurrent4A` pass. Submit returns the correct result. State is consistent across all 3 servers.
+
+But there's one scenario we haven't handled yet...
+
+---
+
+## Phase 3: "I still think I'm the leader"
+
+Imagine this scenario:
+
+```
+Cluster with 3 servers: S0 (leader), S1, S2
+
+1. S0 receives Submit(Inc{}) from client
+   → rf.Start(op) → isLeader=true
+   → pending[2] = {id=42, ch}
+   → Submit blocks on <-ch
+
+2. Network splits: S0 is isolated, only S1-S2 can talk
+
+3. S1 and S2 elect a new leader: S1 wins (term=2)
+
+4. S0 still thinks it's the leader (it can't hear S1 or S2)
+
+5. Submit on S0 blocks... forever...
+```
+
+And even after the partition heals, there's a subtler danger:
+
+```
+S1 (new leader, term=2) commits a different Inc to index=2
+→ S0 receives ApplyMsg: {CommandIndex=2, Command=Op{UniqueID=99}}
+
+But pending[2] on S0 has UniqueID=42!
+→ reader sends the result of Inc{} — but Submit is waiting for *its own* Inc{}
+→ Submit receives the wrong result ❌
+```
+
+### Fix: check UniqueID in reader
+
+```go
+if ok {
+    if pw.uniqueID == op.UniqueID {
+        pw.ch <- waitResult{err: rpc.OK, val: result}
+    } else {
+        // Our op was not committed — we lost leadership
+        pw.ch <- waitResult{err: rpc.ErrWrongLeader}
+    }
+}
+```
+
+When UniqueID doesn't match, a new leader committed a different op at that index. Our op was lost — return `ErrWrongLeader` and let the client retry.
+
+### Fix: leaderMonitor — unblock Submit as soon as leadership is lost
+
+The ID mismatch check only works when the new leader commits *something* at the same index. What if the new leader commits nothing? Submit stays blocked indefinitely.
+
+The solution: a goroutine that polls `GetState()` every 10ms and drains all pending entries when we're no longer leader:
+
+```go
+func (rsm *RSM) leaderMonitor() {
+    ticker := time.NewTicker(10 * time.Millisecond)
+    defer ticker.Stop()
+    for {
+        select {
+        case <-rsm.done:  // Raft killed → exit
+            return
+        case <-ticker.C:
+            _, isLeader := rsm.rf.GetState()
+            if !isLeader {
+                rsm.drainPending(rpc.ErrWrongLeader)
+            }
+        }
+    }
+}
+```
+
+And `drainPending` must **release the lock before sending** to channels (to avoid deadlock):
+
+```go
+func (rsm *RSM) drainPending(err rpc.Err) {
+    rsm.mu.Lock()
+    if len(rsm.pending) == 0 {
+        rsm.mu.Unlock()
+        return
+    }
+    old := rsm.pending
+    rsm.pending = make(map[int]pendingOp)  // fresh map
+    rsm.mu.Unlock()
+    // Send outside the lock — buffer=1 means reader never blocks here
+    for _, pw := range old {
+        pw.ch <- waitResult{err: err}
+    }
+}
+```
+
+### The painful lesson from writing the Phase 3 test
+
+I wrote this test:
+
+```go
+// Partition old leader (l), heal after 100ms, check Submits return ErrWrongLeader
+ts.Group(Gid).Partition(p1, p2)
+go submitNullOps(ts, l)  // submit to old leader
+time.Sleep(100 * time.Millisecond)
+ts.Group(Gid).ConnectAll()
+// Expect: all Submits return ErrWrongLeader ✓
+```
+
+**Result: FAIL** — all Submits returned `rpc.OK` instead of `ErrWrongLeader`.
+
+The reason: Raft's election timeout is **300–600ms**. After only 100ms, no election has happened. When the partition heals, the old leader is still in the same term, has quorum, and commits those Null ops immediately — returning OK.
+
+The fix: before healing, **force** the majority to elect a new leader by submitting something to the majority partition:
+
+```go
+p1, p2 := ts.Group(Gid).MakePartition(l)
+ts.Group(Gid).Partition(p1, p2)
+
+go submitNullOps(ts, l)
+time.Sleep(10 * time.Millisecond)
+
+// Force election: submit Inc to the majority (p1)
+// → S1 wins election (term=2) → commits Inc
+ts.onePartition(p1, Inc{})
+
+// Now heal the partition
+time.Sleep(time.Second)
+ts.Group(Gid).ConnectAll()
+// Old leader receives heartbeat from S1 with term=2 → steps down
+// leaderMonitor: isLeader=false → drainPending → ErrWrongLeader ✓
+```
+
+There's an important subtlety here: **leaderMonitor cannot detect a partition immediately.** An isolated server still thinks it's the leader — it doesn't know it lost quorum — until it receives a message with a higher term. The mechanisms that actually unblock Submit are:
+1. After heal + election: `isLeader=false` → `drainPending`.
+2. Or: reader receives an ApplyMsg from the new leader with a different UniqueID → mismatch → `ErrWrongLeader`.
+
+---
+
+## Phase 4: Shutting down gracefully
+
+The final test: `TestShutdown4A`. The scenario:
+
+1. 100 Submit goroutines are blocking.
+2. All servers are killed.
+3. Expect: all 100 goroutines return.
+
+Without any handling, 100 goroutines block forever on `<-ch`.
+
+### The chain of events needed when Kill() is called
+
+```
+rsmSrv.Kill()
+    │
+    ├─▶ rsm.Kill()
+    │       └─▶ rf.Kill()  (set dead=1)
+    │
+    └─▶ rs.rsm = nil
+
+Raft applier goroutine:
+    for !rf.killed() {...}  ← exits because dead=1
+    defer close(applyCh)    ← closes the channel
+
+RSM reader():
+    for msg := range rsm.applyCh  ← range on closed channel → exits loop
+    close(rsm.done)               ← signals leaderMonitor to stop
+    rsm.drainPending(ErrWrongLeader)  ← unblocks all waiting Submits
+```
+
+### The hidden bug in Raft's applier
+
+My first attempt placed `close(applyCh)` at the end of the `applier()` function:
+
+```go
+func (rf *Raft) applier(applyCh chan raftapi.ApplyMsg) {
+    for !rf.killed() {
+        rf.mu.Lock()
+        if rf.killed() {
+            rf.mu.Unlock()
+            return  // ← EXIT PATH 1: returns early, skips close(applyCh) ❌
+        }
+        // ... process entries ...
+    }
+    close(applyCh)  // ← only reached via the loop condition exit
+}
+```
+
+The problem: there are **two exit paths**. If Kill() is called right after the goroutine enters the loop and acquires the lock, it takes the inner `return` path — and `close(applyCh)` is never called. RSM's reader has no way to know Raft is dead, so it keeps waiting forever.
+
+The correct fix: use `defer`:
+
+```go
+func (rf *Raft) applier(applyCh chan raftapi.ApplyMsg) {
+    defer close(applyCh)  // ← runs regardless of which exit path is taken ✓
+    for !rf.killed() {
+        rf.mu.Lock()
+        if rf.killed() {
+            rf.mu.Unlock()
+            return
+        }
+        // ...
+    }
+}
+```
+
+### Another thing that was commented out
+
+In `server.go`, the Kill method for the test server had a line commented out:
+
+```go
+func (rs *rsmSrv) Kill() {
+    rs.mu.Lock()
+    defer rs.mu.Unlock()
+    //rs.rsm.Kill()  ← commented out!
+    rs.rsm = nil
+}
+```
+
+Because `rsm.Kill()` was never called, `rf.Kill()` was never called, the applier never exited, `applyCh` was never closed, reader never stopped, and blocking Submits hung forever. Adding `Kill()` to RSM and wiring it up fixed everything:
+
+```go
+// In rsm.go:
+func (rsm *RSM) Kill() {
+    rsm.rf.Kill()
+}
+
+// In server.go:
+func (rs *rsmSrv) Kill() {
+    rs.mu.Lock()
+    defer rs.mu.Unlock()
+    if rs.rsm != nil {
+        rs.rsm.Kill()  // ← now actually called
+    }
+    rs.rsm = nil
+}
+```
+
+### Restart replay — free for the taking
+
+`TestRestartReplay4A` checks that after a full shutdown and restart, the state machine is correctly rebuilt. After 100 Inc operations, the counter should be 100. After restart and one more Inc, it should be 101.
+
+This works without any extra code. When a server restarts, Raft loads its persisted log and replays all committed entries through `applyCh`. The reader goroutine processes each one, calling `DoOp()` for every entry — rebuilding the state machine from scratch. No pending entries exist at startup, so reader just executes each entry and moves on.
+
+The full shutdown-and-restart flow looks like this:
+
+```
+Restart
+  │
+  ▼
+MakeRSM() — fresh RSM, fresh pending map, fresh done channel
+  │
+  ▼
+raft.Make() — loads persisted log and state
+  │
+  ▼
+reader() starts — reads replayed entries from applyCh
+  │
+  ▼
+DoOp() for each committed entry → rebuilds state
+  │
+  ▼
+Ready — counter = 100, ready to accept new requests
+```
+
+---
+
+## Final results
+
+After all four phases, the full test suite passes with the race detector enabled:
+
+```
+Phase1: startup and shutdown                          PASS  0.0s
+Phase1: Submit does not hang                          PASS  0.0s
+Phase1: reader goroutine calls DoOp                   PASS  0.5s
+Phase2: Submit returns OK with result                 PASS  0.5s
+Phase2: sequential submits return incrementing        PASS  0.5s
+Phase2: concurrent submits all complete               PASS  0.6s
+Phase3: Submit to partitioned leader returns          PASS  1.8s
+TestBasic4A                                           PASS  1.6s
+TestConcurrent4A                                      PASS  0.5s
+TestLeaderFailure4A                                   PASS  1.2s
+TestLeaderPartition4A                                 PASS  2.1s
+TestRestartReplay4A                                   PASS 14.9s
+TestShutdown4A                                        PASS 10.0s
+TestRestartSubmit4A                                   PASS 25.4s
+```
+
+---
+
+## What I learned
+
+**1. Raft commit ≠ service execution.** Raft only guarantees the ordering and durability of the log. The layer above must read from `applyCh` and actually execute the commands.
+
+**2. Pending map + channel is the basic pattern for syncing two goroutines.** The log index is the shared key — the only piece of information both Submit and reader have in common. Buffer size 1 means reader never blocks, even if Submit has already given up and moved on.
+
+**3. Never send to a channel while holding a mutex.** `drainPending` must copy the map under the lock, release the lock, then send. Easy to forget. Easy to deadlock.
+
+**4. `defer` is your best friend when a function has multiple exit paths.** `defer close(applyCh)` ensures the channel is always closed, regardless of how the goroutine exits. Placing `close` at the end of the function is not enough.
+
+**5. Tests need to reflect real system behavior.** My first Phase 3 test was wrong because it didn't force an election — it was testing an unrealistic scenario where a partition heals before any timeout fires. Looking at how the lab's own `TestLeaderPartition4A` was written made it click.
+
+**6. A partitioned leader doesn't know it's partitioned.** Raft has no built-in mechanism to detect "I've lost quorum." A leader only learns it's no longer leader when it receives a message with a higher term. Until then, Submit just has to sit and wait — there's nothing else it can do.
+
+---
+
+*Next up: Lab 4B — building an actual key/value store on top of this RSM, with full Get, Put, and linearizability guarantees.*
+
+---
+
+## Appendix: State recovery after restart — it doesn't always work
+
+*This is not part of the main lab content, but it's an interesting dark corner of Raft worth thinking about.*
+
+### Why does restart replay work in the lab?
+
+I said earlier that restart replay "works automatically." True — but with one implicit condition: at least one new command must arrive after restart.
+
+Here's why. After a restart, `commitIndex` and `lastApplied` are **not persisted** — both start at 0. The log survives on disk, but the server has no idea how far it had committed.
+
+```
+Before restart:
+  Log:         [E1, E2, E3, E4, E5]
+  commitIndex: 5
+  lastApplied: 5
+  State:       counter = 5
+
+After restart:
+  Log:         [E1, E2, E3, E4, E5]  ← still there
+  commitIndex: 0                      ← reset to 0
+  lastApplied: 0                      ← reset to 0
+  State:       counter = 0            ← completely empty
+```
+
+### How does the leader rediscover commitIndex?
+
+Raft has a critical safety rule: **a leader may only commit entries from its current term**. Entries from older terms can only be committed indirectly, when a current-term entry is committed.
+
+```go
+// Inside advanceCommitIndexLocked():
+if rf.logTerm(n) == rf.currentTerm {
+    // only advance if the entry at index n belongs to the current term
+}
+```
+
+This means: after winning an election at `term=3`, the new leader cannot simply acknowledge that `E1..E5` are committed (they belong to older terms). It can only advance `commitIndex` once a new entry belonging to `term=3` is confirmed by a majority.
+
+### When no new requests arrive
+
+```
+Full cluster restart → election → new leader at term=3
+
+No client requests arrive
+→ leader has no entries belonging to term=3
+→ leader cannot advance commitIndex
+→ leader sends heartbeats with leaderCommit=0
+→ followers receive leaderCommit=0 → their commitIndex=0
+→ applier sends nothing through applyCh
+→ state machine stays empty
+
+The counter we incremented to 5? Gone.
+```
+
+This is a real limitation. `TestRestartReplay4A` passes because, after the restart, the test always sends at least one new `Inc` — that entry belongs to `currentTerm`, gets committed, and transitively pulls all the old log entries into "committed" status via indirect commit. State machine rebuilt.
+
+### The real-world fix: no-op entry
+
+Many production Raft implementations (etcd/raft, TiKV) address this by **appending a no-op entry immediately upon becoming leader**:
+
+```go
+func (rf *Raft) becomeLeader() {
+    rf.state = Leader
+    // append a no-op to bootstrap commitIndex right away
+    rf.log = append(rf.log, LogEntry{
+        Term:    rf.currentTerm,
+        Command: nil,  // no-op
+    })
+    rf.replicateToAll()
+}
+```
+
+This no-op has `logTerm = currentTerm`. Once a majority confirms it, `advanceCommitIndexLocked` advances commitIndex to the no-op — and all prior entries commit indirectly. State machine is fully rebuilt without waiting for any client request.
+
+Lab 4A doesn't implement the no-op, and the test suite doesn't expose this gap because there's always a client request after restart. But if you deployed this in production and the entire cluster restarted with no incoming traffic — state would be invisible until the first request arrived.
+
+---
+
+## Appendix 2: How catch-up works after reconnect — Raft and RSM in concert
+
+*From `TestLeaderFailure4A`: after a server disconnects and reconnects, it automatically gets the latest state with no extra code. What's actually happening?*
+
+### The concrete scenario
+
+```
+Initially: S0 (leader), S1, S2 — counter=1 on all 3
+           S0 log: [E1]   commitIndex=1
+           S1 log: [E1]   commitIndex=1
+           S2 log: [E1]   commitIndex=1
+
+disconnectLeader() → S0 is cut off from the network
+
+S1 wins election (term=2), becomes new leader
+Client sends Inc → S1 commits E2 at index=2
+           S1 log: [E1, E2]  commitIndex=2  counter=2
+           S2 log: [E1, E2]  commitIndex=2  counter=2
+           S0 log: [E1]      commitIndex=1  counter=1  ← stale
+
+connect(l) → S0 reconnects
+```
+
+### Raft layer: log catch-up
+
+When S0 reconnects, it starts receiving heartbeats from S1 (the new leader). A heartbeat is an `AppendEntries` RPC — even with no new entries, it carries critical metadata.
+
+**Step 1 — S1 detects S0 is behind:**
+
+The leader maintains `nextIndex[S0]` — the index of the next entry it needs to send to each follower. After S0 reconnects and responds to a heartbeat, S1 compares logs:
+
+```
+nextIndex[S0] = 2  (S1 needs to send E2 to S0)
+S0 is missing E2 → S1 sends AppendEntries with entries=[E2], leaderCommit=2
+```
+
+**Step 2 — S0 appends the entry and updates commitIndex:**
+
+```go
+// S0 receives AppendEntries from S1:
+// entries=[E2], leaderCommit=2
+
+// Append E2 to log:
+rf.log = append(rf.log, E2)
+
+// Update commitIndex based on leaderCommit:
+if leaderCommit > rf.commitIndex {
+    rf.commitIndex = min(leaderCommit, len(rf.log))
+    // → rf.commitIndex = 2
+}
+```
+
+**Step 3 — S0's applier sends entries through applyCh:**
+
+```go
+// applier goroutine sees lastApplied < commitIndex:
+// lastApplied=1, commitIndex=2
+// → sends ApplyMsg{CommandIndex: 2, Command: Op{Req: Inc{}}}
+applyCh <- raftapi.ApplyMsg{
+    CommandValid: true,
+    CommandIndex: 2,
+    Command:      Op{UniqueID: ..., Req: Inc{}},
+}
+```
+
+### RSM layer: state machine catches up
+
+RSM's `reader()` goroutine has been running on S0 the whole time, waiting on `applyCh`:
+
+```go
+func (rsm *RSM) reader() {
+    for msg := range rsm.applyCh {
+        if !msg.CommandValid { continue }
+        op := msg.Command.(Op)
+        result := rsm.sm.DoOp(op.Req)  // ← calls DoOp(Inc{})
+        // ...
+    }
+}
+```
+
+`DoOp(Inc{})` on S0:
+```go
+case Inc:
+    rs.mu.Lock()
+    rs.counter += 1  // 1 → 2
+    rs.mu.Unlock()
+    return &IncRep{rs.counter}
+```
+
+No `Submit` is waiting at index=2 on S0 (S0 wasn't the leader when E2 was submitted). Reader checks `pending[2]` → nothing → skips the channel send. Only the state machine is updated.
+
+### How checkCounter works — reading directly from memory
+
+```go
+func (ts *Test) countValue(v int) int {
+    i := 0
+    for _, s := range ts.srvs {
+        s.mu.Lock()
+        if s.counter == v {  // ← direct memory read
+            i += 1
+        }
+        s.mu.Unlock()
+    }
+    return i
+}
+```
+
+`checkCounter` does **not** send any network requests. It reads `s.counter` directly from each server's memory (this is a test environment — all servers are goroutines in the same process). It polls with exponential backoff (10ms → 20ms → ... capped at 1s) up to 30 iterations, waiting until `nsrv` servers hold the expected value.
+
+This matters because: S0 needs time to receive the AppendEntries, append the log entry, update commitIndex, run the applier, and call DoOp — all asynchronously. `checkCounter` patiently waits without needing to know the exact timing.
+
+### The full sequence — two layers working together
+
+```
+connect(S0)
+    │
+    ▼ [Raft layer]
+S1 sends AppendEntries(entries=[E2], leaderCommit=2) → S0
+    │
+    ▼ S0: appends E2 to log, commitIndex=2
+    │
+    ▼ S0 applier: lastApplied(1) < commitIndex(2)
+    │   → applyCh ← ApplyMsg{Index=2, Command=Op{Inc{}}}
+    │
+    ▼ [RSM layer]
+S0 reader(): receives ApplyMsg → DoOp(Inc{})
+    │   → s.counter: 1 → 2
+    │   → pending[2] is empty → no channel send
+    │
+    ▼ [Test layer]
+checkCounter(2, 3): polls s.counter on all 3 servers
+    │   → S1.counter=2 ✓, S2.counter=2 ✓, S0.counter=2 ✓
+    └─▶ PASS
+```
+
+### The key insight
+
+Raft and RSM don't have any special "reconnect" logic — they just talk through `applyCh`. S0 reconnects → Raft automatically syncs the log → the applier automatically sends entries through applyCh → the RSM reader automatically calls DoOp. No code in RSM handles the "just reconnected" case specially. This is the elegance of the design: **every committed entry flows through applyCh — regardless of why it hadn't been applied yet.**
