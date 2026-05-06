@@ -1,0 +1,373 @@
+---
+layout: post
+title: "MIT 6.5840 Lab 4B: Building a Replicated KV Service on Top of Raft"
+date: 2026-05-05 00:00:00 +0700
+excerpt: >
+  Lab 4B looks simple on paper — just connect a KV store to Raft. But correctness in the face of network drops, leadership changes, and server crashes demands understanding exactly where each guarantee comes from. Most of the hard problems turn out to already be solved — if you build the right primitives.
+comments: true
+---
+
+Lab 4A gave me a replicated state machine (RSM) layer that wraps Raft: submit a command, block until committed, get a result back. The RSM handles all the coordination — leader detection, waiting on `applyCh`, draining pending ops on shutdown.
+
+Lab 4B asks: given that RSM, build a fault-tolerant key-value service. Clerks send Get/Put RPCs. The service must remain correct under network failures, leadership changes, server crashes, and network partitions.
+
+The five concrete goals I set before writing a line of code:
+
+- **Get/Put RPC handlers must call `rsm.Submit()` and block until committed** — not return speculatively
+- **Put must check the version and only apply when it matches** — enforcing at-most-once semantics
+- **The Clerk must remember the last known leader** — avoiding redundant round-trips on every request
+- **Put must return `ErrMaybe` when retrying after a first attempt that might have reached the server** — telling the application "I don't know if this happened"
+- **Crash/restart must reproduce the exact same state** — DoOp must be deterministic over Raft log replay
+
+Each goal exists because the system fails visibly without it. Without blocking in the handler, a client receives a response before the write is durable — a node crash before replication erases it. Without version checking, a retried Put applies twice. Without `ErrMaybe`, an application that received a definitive-looking error might retry a Put that already succeeded, corrupting shared state. Without determinism, servers that crash and restart diverge from peers that stayed up.
+
+The surprising thing about this lab: most of these correctness properties fall out of two simple design decisions. Everything else is plumbing.
+
+---
+
+## Where This Lab Sits in the Stack
+
+```
+Application
+    │
+    ▼
+Clerk (client.go)          ← find leader, retry, ErrMaybe
+    │  RPC: Get / Put
+    ▼
+KVServer (server.go)       ← DoOp, version-gated KV store
+    │  rsm.Submit(args)
+    ▼
+RSM (rsm/rsm.go)           ← built in Lab 4A
+    │  rf.Start(op)
+    ▼
+Raft (raft1/)              ← built in Lab 3
+    │  ApplyMsg → applyCh
+    ▼
+RSM.reader() goroutine
+    │  sm.DoOp(req) → result
+    ▼
+KVServer.DoOp(req)         ← called here, on reader's goroutine
+```
+
+Raft's job: replicate a sequence of log entries across a majority of servers, in order, durably. It doesn't know what those entries mean.
+
+RSM's job: wrap Raft so that `Submit(req)` behaves like a blocking remote call — the caller gets back a result only when Raft has committed the op on a majority.
+
+KVServer's job: give meaning to ops. `DoOp` interprets each committed entry as a Get or Put and applies it to the in-memory KV map.
+
+Clerk's job: find the current leader, issue requests, retry on failure, and honestly report whether a Put might have already happened.
+
+The boundary that matters most: **KVServer must not hold its mutex when calling `rsm.Submit()`**. Submit blocks. While it blocks, the RSM's reader goroutine calls `DoOp` — which needs that same mutex. Holding the lock across Submit is an instant deadlock.
+
+```
+KVServer.Get():
+  ┌─ kv.rsm.Submit(*args)     ← NO lock held
+  │    blocks...
+  │    RSM reader calls DoOp()
+  │      └─ kv.mu.Lock()      ← DoOp acquires lock here
+  │         reads kv.kv[key]
+  │         kv.mu.Unlock()
+  │    result sent back
+  └─ result returned
+  *reply = result.(rpc.GetReply)
+```
+
+---
+
+## The Two Design Decisions That Do Most of the Work
+
+### 1. Version-gated KV Store
+
+Every key carries two fields: a value and a monotonically increasing version number, starting at 0.
+
+```go
+// Only apply if the client's version matches the current version.
+case rpc.PutArgs:
+    cur := kv.ver[r.Key]
+    if r.Version != cur {
+        return rpc.PutReply{Err: rpc.ErrVersion}
+    }
+    kv.kv[r.Key] = r.Value
+    kv.ver[r.Key] = cur + 1
+    return rpc.PutReply{Err: rpc.OK}
+```
+
+This single check enforces at-most-once for Put, and it also gives crash recovery for free.
+
+**At-most-once:** A Clerk sends `Put(key="x", value="A", version=3)`. The server applies it, bumps the version to 4, and sends back OK. The reply is dropped. The Clerk retries with the same args. The server now sees `version=3 != currentVersion=4` and returns `ErrVersion`. The write was not applied a second time.
+
+**Crash recovery:** When a server restarts, Raft replays the entire log through `applyCh`. `DoOp` gets called for every entry in order. The version-based check ensures the replay produces exactly the same state as the original execution — no extra dedup IDs needed, no special replay logic. If `Put(x, A, ver=3)` succeeded the first time, it will succeed again during replay because the version will be at exactly 3 when that entry is reached.
+
+### 2. Leader-tracking Clerk
+
+The Clerk keeps one field: `leader int`, the index of the server it last successfully reached.
+
+```go
+type Clerk struct {
+    clnt    *tester.Clnt
+    servers []string
+    leader  int          // remembered across calls
+}
+```
+
+Every request starts at `servers[leader]`. On `ErrWrongLeader` or network failure, it advances to the next server round-robin. On success, it stays put.
+
+Why does this matter? `TestSpeed4B` requires at least 3 ops per 100ms heartbeat interval — or equivalently, 1000 sequential Puts must complete in under ~33 seconds. Without leader tracking, every request that hits a non-leader burns an extra RTT before finding the right server. In a 5-server cluster where the leader is server 4, that's 4 wasted RPCs per request. With leader tracking, after the first successful request, all subsequent ones go directly to the leader.
+
+---
+
+## ErrMaybe: Knowing When You Don't Know
+
+This is the subtlest part of the Clerk implementation.
+
+Put has two distinct retry states, and they need different return values:
+
+**First attempt:** If the server returns `ErrVersion`, the client sent the wrong version to begin with. The Put definitely did not happen. Return `ErrVersion`.
+
+**Any subsequent attempt:** If the server returns `ErrVersion`, the client cannot tell whether its first attempt reached the server. The server might have applied it (version incremented, reply dropped) or never seen it (network dropped the request). Return `ErrMaybe`.
+
+The difference is tracked with a single boolean:
+
+```go
+func (ck *Clerk) Put(key string, value string, version rpc.Tversion) rpc.Err {
+    args := rpc.PutArgs{Key: key, Value: value, Version: version}
+    isRetry := false
+    for {
+        reply := rpc.PutReply{}
+        ok := ck.clnt.Call(ck.servers[ck.leader], "KVServer.Put", &args, &reply)
+        if ok {
+            if reply.Err == rpc.ErrWrongLeader {
+                ck.leader = (ck.leader + 1) % len(ck.servers)
+                isRetry = true                          // ← tried at least once
+            } else if isRetry && reply.Err == rpc.ErrVersion {
+                return rpc.ErrMaybe                    // ← don't know if it happened
+            } else {
+                return reply.Err
+            }
+        } else {
+            isRetry = true                             // ← network drop = tried once
+            ck.leader = (ck.leader + 1) % len(ck.servers)
+        }
+        time.Sleep(10 * time.Millisecond)
+    }
+}
+```
+
+`isRetry` is set to true in two cases: when the network drops the call (`ok=false`), and when the server returns `ErrWrongLeader`. Both mean "I sent a request that may or may not have arrived."
+
+The critical distinction: `ok=false` does not mean the server never received the request. It means the reply didn't come back. The server could have fully processed the Put, incremented the version, and then had the reply dropped on the way home.
+
+This is different from Lab 2 (single server): there, you never have to try multiple servers, so a network drop is the only source of ambiguity. In Lab 4B, switching servers on `ErrWrongLeader` is also a retry in the ErrMaybe sense.
+
+---
+
+## Partitions: Why Minority Requests Block
+
+`TestOnePartition4B` splits a 5-server cluster so the old leader ends up in the minority (2 servers). It verifies three things: a Clerk in the minority blocks indefinitely, a Clerk in the majority keeps making progress, and after healing the blocked Clerk completes.
+
+I expected to need explicit partition-handling logic. There is none. But understanding *why* it works correctly requires tracing the mechanism all the way down.
+
+### First: Get and Put must go through Raft, not local state
+
+```go
+func (kv *KVServer) Get(args *rpc.GetArgs, reply *rpc.GetReply) {
+    err, result := kv.rsm.Submit(*args)   // ← must go through Raft
+    ...
+}
+```
+
+The server does **not** read `kv.kv[key]` directly. Every Get must be committed by Raft on a majority before the handler returns. If Get returned local state directly, a partitioned minority server would serve stale data — it doesn't know about writes that the majority committed while it was cut off.
+
+This is the root reason minority requests block: they're waiting for a Raft commit that requires majority agreement, and in the minority, that majority doesn't exist.
+
+### Two cases when a Clerk sends into the minority
+
+**Case A: The server is not the leader**
+
+```
+rf.Start(op) → isLeader=false
+RSM.Submit() → returns ErrWrongLeader immediately
+KVServer.Get() → reply.Err = ErrWrongLeader
+Clerk → advance leader, try next server → same result → loops forever
+```
+
+Returns quickly. The Clerk cycles through all servers in the minority, gets `ErrWrongLeader` from each, and loops back to the start — indefinitely. The caller is stuck in this loop.
+
+**Case B: The server is the stale leader (still thinks it's leader)**
+
+This is the case that actually blocks:
+
+```
+Clerk                  KVServer (minority)          Raft (minority)
+  │                         │                             │
+  ├── Call("KVServer.Get") ▶│                             │
+  │                         ├── Submit(*args) ───────────▶│
+  │                         │              rf.Start(op) ──▶ isLeader=true ← stale!
+  │                         │              AppendEntries ──▶ 2 servers confirm
+  │                         │              waiting for majority... forever
+  │  [blocked waiting        │                             │
+  │   for handler return]   │  [blocked on <-ch]          │ [never commits]
+```
+
+`rf.Start()` returns `isLeader=true` because the old leader hasn't heard from the majority yet — it still believes it's in charge. The op enters the RSM's pending map and waits on a channel. Raft appends the entry and sends `AppendEntries` to both minority servers. Only 2 out of 5 confirm. Raft never reaches majority. The entry never commits. The channel never receives a value. `Submit()` blocks. The RPC handler blocks. The Clerk's `Call()` blocks.
+
+### Why doesn't the stale leader know it's in the minority?
+
+A Raft leader only discovers it's no longer the leader when it receives an RPC carrying a higher term. While the partition is active, the majority has elected a new leader with a higher term — but the minority never receives any message from the majority. So from the stale leader's perspective, nothing has changed.
+
+```
+RSM.leaderMonitor() polls rf.GetState() every 10ms
+    → still returns isLeader=true
+    → drainPending() is NOT called
+    → pending op stays in the map, waiting
+```
+
+The stale leader keeps believing it's the leader until the partition heals.
+
+### What unblocks everything when the partition heals
+
+```
+Partition heals
+    │
+    ▼
+Majority leader sends AppendEntries with higher term to minority servers
+    │
+    ▼
+Stale leader sees higher term → steps down, updates term
+    │
+    ▼
+RSM.leaderMonitor() polls → isLeader=false → drainPending(ErrWrongLeader)
+    │
+    ▼
+Pending channel receives ErrWrongLeader → Submit() returns
+    │
+    ▼
+KVServer.Get() returns reply.Err = ErrWrongLeader to Clerk
+    │
+    ▼
+Clerk advances to next server (now reachable, connected to majority leader)
+    │
+    ▼
+Submit succeeds → committed → result returned
+```
+
+The Clerk that was stuck on the stale leader's blocking `Call()` finally gets a response — `ErrWrongLeader` — and resumes its retry loop. The next server it tries now has connectivity to the real majority leader, so the request goes through.
+
+**Insight:** The minority block is not a special case. It is the ordinary behavior of `rsm.Submit()` — it blocks until Raft commits, and Raft in a minority never commits. The Clerk's simple retry loop is partition-transparent by construction: if no server in the reachable set has a working leader, the loop runs forever, which is exactly right.
+
+---
+
+## Crash Recovery: Also a Non-Problem
+
+`TestPersistPartitionUnreliableLinearizable4B` — 15 clients, 7 servers, unreliable network, random partitions, servers crashing and restarting — passes without any special crash-handling code in KVServer.
+
+How? Raft. When a server restarts, it loads its persisted log and re-applies every committed entry through `applyCh`. The RSM reader goroutine calls `DoOp` for each one, in order. The KV map is rebuilt from scratch.
+
+Version-based Put makes this safe. Each log entry carries the client's expected version. When replayed, the Put will find the key at exactly the right version (because earlier entries already moved it there) and succeed — producing the same result as the original execution.
+
+No external deduplication, no write-ahead log in KVServer, no snapshot needed (for 4B — that's 4C). The version number in each log entry is both the guard against double-application and the mechanism for deterministic replay.
+
+---
+
+## The Type Assertion That Looks Dangerous
+
+When I first saw this line:
+
+```go
+func (kv *KVServer) Get(args *rpc.GetArgs, reply *rpc.GetReply) {
+    err, result := kv.rsm.Submit(*args)
+    // ...
+    *reply = result.(rpc.GetReply)   // asserting any → concrete type
+}
+```
+
+My first reaction was: how does this not panic? `rsm.Submit()` returns `any`. What guarantees the concrete type inside is `rpc.GetReply`?
+
+The answer is that the pipeline is closed. Trace it:
+
+```
+KVServer.Get passes rpc.GetArgs to Submit
+    ↓
+RSM wraps it in Op{Req: rpc.GetArgs{...}} and sends to Raft
+    ↓
+Raft commits → RSM reader calls DoOp(op.Req) where op.Req is rpc.GetArgs
+    ↓
+KVServer.DoOp: switch r := req.(type) { case rpc.GetArgs: return rpc.GetReply{...} }
+    ↓
+DoOp returns rpc.GetReply as any (type tag preserved inside interface)
+    ↓
+RSM sends it back through the pending channel
+    ↓
+Submit returns it as any
+    ↓
+KVServer.Get asserts result.(rpc.GetReply) — always succeeds
+```
+
+Go's `any` (i.e., `interface{}`) is a pair of `(concrete_type, pointer_to_value)`. It never erases the type information. Type assertion just checks the tag and extracts the value. No transformation happens.
+
+The pipeline is closed: the same goroutine path that starts with `rpc.GetArgs` always ends with `rpc.GetReply`. There's no place for a different type to enter.
+
+The trap to avoid: value vs pointer must match exactly throughout. `labgob.Register(rpc.GetArgs{})` registers the value type. `Submit(*args)` passes a value type (dereferenced). `DoOp` returns `rpc.GetReply{}` (not `&rpc.GetReply{}`). `result.(rpc.GetReply)` asserts the value type. If any one of these used a pointer where the others used a value, the assertion would panic at runtime.
+
+---
+
+## Final Results
+
+```
+Test: one client (4B basic) (reliable network)...
+  ... Passed --  time  3.1s #peers 5 #RPCs  1422 #Ops  255
+Test: one client (4B speed) (reliable network)...
+  ... Passed --  time 15.1s #peers 3 #RPCs  3288 #Ops    0
+Test: many clients (4B many clients) (reliable network)...
+  ... Passed --  time  3.6s #peers 5 #RPCs  3375 #Ops  617
+Test: many clients (4B many clients) (unreliable network)...
+  ... Passed --  time  4.4s #peers 5 #RPCs  1928 #Ops  247
+Test: one client (4B progress in majority) (unreliable network)...
+  ... Passed --  time  1.4s #peers 5 #RPCs   121 #Ops    4
+Test: no progress in minority (4B) (unreliable network)...
+  ... Passed --  time  1.1s #peers 5 #RPCs   101 #Ops    3
+Test: completion after heal (4B) (unreliable network)...
+  ... Passed --  time  1.1s #peers 5 #RPCs    63 #Ops    4
+Test: partitions, one client (4B partitions, one client) (reliable network)...
+  ... Passed --  time  9.4s #peers 5 #RPCs  1681 #Ops  259
+Test: partitions, many clients (4B partitions, many clients (4B)) (reliable network)...
+  ... Passed --  time 10.5s #peers 5 #RPCs  3639 #Ops  591
+Test: restarts, one client (4B restarts, one client 4B ) (reliable network)...
+  ... Passed --  time  6.1s #peers 5 #RPCs  1106 #Ops  181
+Test: restarts, many clients (4B restarts, many clients) (reliable network)...
+  ... Passed --  time  6.6s #peers 5 #RPCs  3355 #Ops  555
+Test: restarts, many clients (4B restarts, many clients ) (unreliable network)...
+  ... Passed --  time  7.0s #peers 5 #RPCs  1525 #Ops  173
+Test: restarts, partitions, many clients (4B restarts, partitions, many clients) (reliable network)...
+  ... Passed --  time 14.5s #peers 5 #RPCs  3622 #Ops  493
+Test: restarts, partitions, many clients (4B restarts, partitions, many clients) (unreliable network)...
+  ... Passed --  time 14.5s #peers 5 #RPCs  1973 #Ops  171
+Test: restarts, partitions, random keys, many clients (4B restarts, partitions, random keys, many clients) (unreliable network)...
+  ... Passed --  time 21.3s #peers 7 #RPCs  6742 #Ops  396
+PASS
+ok  	6.5840/kvraft1	121.150s
+```
+
+15/15 tests pass, race detector clean. The hardest test — 15 clients, 7 servers, unreliable network, random partitions, crash-restart — finished in 21 seconds.
+
+The speed test is worth noting: 15.1 seconds for 1000 sequential Puts = 15.1ms per op = ~6.6 ops per heartbeat interval. The requirement is 3. Leader tracking accounts for much of this — after the first request, every subsequent one goes straight to the leader without scanning.
+
+---
+
+## What I Took Away
+
+1. **Version numbers as operation IDs.** The version in each Put request is both a concurrency guard (only apply if version matches) and a replay key (the log entry is self-contained enough to reproduce the same result). This removes the need for client-side deduplication tokens — something other systems (like etcd) need to handle explicitly.
+
+2. **`ok=false` does not mean the server never saw the request.** It means the reply didn't arrive. The server could have applied the write, incremented the version, and then the reply was lost. `ErrMaybe` exists precisely for this case: the client genuinely cannot know. Any system that doesn't distinguish "definitely failed" from "unknown" is lying to its callers.
+
+3. **Locking and blocking calls don't mix.** `Submit()` blocks. `DoOp()` needs the same mutex. If the caller holds the mutex while calling `Submit()`, the system deadlocks silently. The rule: never hold a lock across a call that can block waiting for something that needs that lock.
+
+4. **"Try every server in a loop" is partition-transparent.** A Clerk that naively tries each server round-robin, sleeping 10ms between attempts, automatically handles majority partitions (eventually finds a server with a leader) and minority partitions (blocks until one exists). No explicit partition logic needed.
+
+5. **Crash recovery is implicit when your operations are deterministic.** If every Put in the Raft log fully describes its precondition (expected version) and its effect (new value), replaying the log reproduces the original state exactly. The key insight: version-based conditional writes make each log entry self-contained. This is a form of the Raft thesis — agreement on the sequence of operations is enough if the operations are deterministic.
+
+6. **Reading test infrastructure is harder than reading algorithm code.** The test harness — `SpawnClientsAndWait`, `OneClientPut`, `CheckPorcupine`, the goroutine-and-channel structure — is written to be general across many test scenarios. Any one test scenario is simple; the generality makes the code look complex. The fix: trace from a specific question ("what happens to a Clerk when the network drops its reply?") rather than reading top-to-bottom.
+
+---
+
+Lab 4C asks: what happens when the Raft log grows unbounded? Servers that fall far behind can't catch up by replaying thousands of log entries — they need a snapshot. The `Snapshot()` and `Restore()` methods on KVServer are stubs right now. Making them work correctly, including the interaction between snapshots and in-flight operations, is the next piece.
