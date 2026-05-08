@@ -1,0 +1,347 @@
+---
+layout: post
+title: "MIT 6.5840 Lab 4C: Snapshots — Two Paths, One Bridge"
+date: 2026-05-08 00:00:00 +0700
+excerpt: >
+  Lab 4C adds snapshots to the KV service so servers don't have to replay the entire log on every restart. The implementation is small, but the tricky parts are in the lock discipline and understanding what Raft already does for you.
+comments: true
+---
+
+Lab 4B left me with a fault-tolerant KV service: Clerks retry on failure, Puts are idempotent via version numbers, and Raft handles crash recovery by replaying the log. But there's a cost. Every time a server restarts, it replays the entire Raft log from the beginning. After thousands of operations, that's thousands of `DoOp` calls before the server is ready to serve again. And for a lagging follower that fell behind while partitioned, the leader can't help — the log entries it needs may already have been discarded.
+
+Lab 4C fixes both problems with snapshots. The four concrete goals I set before writing code:
+
+- **`KVServer.Snapshot()` must encode both `kv` and `ver` maps together, under the mutex** — a snapshot missing `ver` silently breaks every Put after restore
+- **The RSM must trigger a snapshot when `rf.PersistBytes() >= maxraftstate`** — checked after each `DoOp`, not before
+- **The RSM must call `sm.Restore()` when it receives a `SnapshotValid` ApplyMsg** — for both InstallSnapshot from a leader and recovery after a crash
+
+Each goal fails quietly without it. Missing `ver` in the snapshot lets everything look fine until the first post-restore Put, which then returns `ErrVersion` on every key — no panic, no test output explaining why. No snapshot triggering means the log grows without bound and `TestSnapshotRPC4C` fails with "logs were not trimmed". And the last one has a trap: the skeleton code in `reader()` already had a line that silently discards every snapshot message.
+
+Notably, crash-restore doesn't require reading `persister.ReadSnapshot()` in `MakeRSM` directly. Raft already handles it: on restart, `raft.Make()` loads the snapshot from the persister and sets an internal flag, which causes the `applier` goroutine to emit a `SnapshotValid` ApplyMsg before replaying any log entries. The RSM just needs to handle that message — the same handler used for `InstallSnapshot` RPCs from the leader covers both cases.
+
+---
+
+## Where This Lab Fits
+
+```
+Application
+    │
+    ▼
+Clerk (client.go)
+    │  RPC: Get / Put
+    ▼
+KVServer (server.go)           ← Snapshot() + Restore()  ← Lab 4C
+    │  rsm.Submit(args)
+    ▼
+RSM (rsm/rsm.go)               ← snapshot triggering      ← Lab 4C
+    │  rf.Start(op)
+    ▼
+Raft (raft1/)                  ← already handles snapshots
+    │  ApplyMsg → applyCh
+    ▼                          ← CommandValid: normal op
+RSM.reader() goroutine         ← SnapshotValid: restore    ← Lab 4C
+    │
+    ├─ sm.DoOp(req)            ← apply normal op
+    └─ sm.Restore(snapshot)    ← install snapshot
+```
+
+Lab 4B touched only `KVServer` and `Clerk`. Lab 4C touches `KVServer` (serialization) and `RSM` (triggering and installation). Raft itself needed no changes — it already implements `rf.Snapshot(index, data)`, `rf.PersistBytes()`, and the `InstallSnapshot` RPC.
+
+The timing constraint that matters most: **snapshot triggering must happen after `DoOp`, not before**. The snapshot must include the result of the entry being applied. If you snapshot before `DoOp`, the snapshot represents a state that's missing the current entry — a server restoring from it would re-apply that entry, producing a duplicate write.
+
+---
+
+## Serializing KV State
+
+The skeleton in `server.go` left `Snapshot()` and `Restore()` unimplemented — `return nil` and an empty body. The implementation is straightforward:
+
+```go
+type kvSnapshot struct {
+    KV  map[string]string
+    Ver map[string]rpc.Tversion
+}
+
+func (kv *KVServer) Snapshot() []byte {
+    kv.mu.Lock()
+    defer kv.mu.Unlock()
+    w := new(bytes.Buffer)
+    e := labgob.NewEncoder(w)
+    e.Encode(kvSnapshot{KV: kv.kv, Ver: kv.ver})
+    return w.Bytes()
+}
+
+func (kv *KVServer) Restore(data []byte) {
+    if len(data) == 0 {
+        return
+    }
+    kv.mu.Lock()
+    defer kv.mu.Unlock()
+    r := bytes.NewBuffer(data)
+    d := labgob.NewDecoder(r)
+    var snap kvSnapshot
+    if err := d.Decode(&snap); err == nil {
+        kv.kv = snap.KV
+        kv.ver = snap.Ver
+    }
+}
+```
+
+Two rules enforced by the struct:
+
+**Both maps must travel together.** If `Snapshot()` encoded only `kv.kv`, a restored server would have the right values but version numbers reset to zero. The first Put from any client with version > 0 would return `ErrVersion`. The test would fail — but the error would say "linearizability violation", not anything about snapshots or version numbers. There's no direct indication of what went wrong.
+
+**All fields must be exported.** `labgob` (which is just `encoding/gob`) silently skips unexported fields. A struct with lowercase `kv` and `ver` would encode and decode without error — but the decoded maps would be nil. Same failure mode as above, same silent symptom.
+
+After writing these two functions, I ran `TestSnapshotSize4C`. It failed with "logs were not trimmed". Correct — the RSM doesn't call `Snapshot()` or `Restore()` yet. These functions are building blocks; the real validation comes when the RSM actually calls them.
+
+---
+
+## The Silent Bug in `reader()`
+
+The RSM's `reader()` goroutine loops over every `ApplyMsg` from Raft. The original skeleton:
+
+```go
+for msg := range rsm.applyCh {
+    if !msg.CommandValid {
+        continue   // ← discards SnapshotValid silently
+    }
+    op := msg.Command.(Op)
+    result := rsm.sm.DoOp(op.Req)
+    // ...
+}
+```
+
+`ApplyMsg` has two valid types: `CommandValid=true` for a committed log entry, and `SnapshotValid=true` for a snapshot installation. These are mutually exclusive — a message is one or the other, never both. So when `SnapshotValid=true`, `CommandValid=false`, and the check `if !msg.CommandValid` fires — discarding the message silently.
+
+The server never calls `Restore()`. A follower that received an `InstallSnapshot` RPC from the leader acts as if nothing happened. Its state stays stale. The test fails with a linearizability violation — not a message that says anything about snapshots or `Restore()`.
+
+The fix is one check before the existing one:
+
+```go
+for msg := range rsm.applyCh {
+    if msg.SnapshotValid {
+        rsm.sm.Restore(msg.Snapshot)   // ← install snapshot
+        continue
+    }
+    if !msg.CommandValid {
+        continue
+    }
+    // ... normal op path
+}
+```
+
+Order matters: check `SnapshotValid` first, because the fallthrough `!CommandValid` would catch it otherwise.
+
+---
+
+## Snapshot Triggering and the Lock Trap
+
+After `DoOp` returns, check whether the Raft log has grown past the threshold:
+
+```go
+op := msg.Command.(Op)
+result := rsm.sm.DoOp(op.Req)
+
+if rsm.maxraftstate != -1 && rsm.rf.PersistBytes() >= rsm.maxraftstate {
+    snap := rsm.sm.Snapshot()
+    rsm.rf.Snapshot(msg.CommandIndex, snap)
+}
+```
+
+This block runs without holding any lock — neither `rsm.mu` nor `kv.mu`. That placement is deliberate. Getting the lock discipline wrong here produces two distinct failure modes.
+
+### Failure Mode 1: Deadlock
+
+Suppose `KVServer.Get` holds `kv.mu` while calling `Submit()`:
+
+```go
+// WRONG
+func (kv *KVServer) Get(args *rpc.GetArgs, reply *rpc.GetReply) {
+    kv.mu.Lock()
+    err, result := kv.rsm.Submit(*args)  // blocks here, waiting for Raft to commit
+    kv.mu.Unlock()
+    // ...
+}
+```
+
+`Submit()` blocks until `reader()` processes the committed entry and calls `DoOp`. But `DoOp` tries to acquire `kv.mu` — which `Get` is still holding. Neither goroutine can move:
+
+```
+Goroutine A  [KVServer.Get]
+  kv.mu.Lock()           ← A holds kv.mu
+  rsm.Submit(*args)      ← A blocks, waiting for DoOp result
+
+Goroutine B  [RSM.reader]
+  sm.DoOp(op.Req)
+    kv.mu.Lock()         ← B blocks, waiting for kv.mu — held by A
+
+→ A waits for B to finish DoOp. B waits for A to release kv.mu. Neither moves.
+```
+
+The fix: never hold `kv.mu` across `Submit()`. `Get` and `Put` should call `Submit()` with no lock held, then read the result.
+
+### Failure Mode 2: Stall during disk write
+
+`rf.Snapshot()` calls `persist()` internally, which writes to disk — potentially slow. If `rsm.mu` is held across that call, every concurrent `Submit()` blocks for the duration:
+
+```go
+// WRONG
+rsm.mu.Lock()
+// ... update pending map
+snap := rsm.sm.Snapshot()
+rsm.rf.Snapshot(msg.CommandIndex, snap)  // disk write here, rsm.mu held throughout
+rsm.mu.Unlock()
+```
+
+```
+Goroutine B  [RSM.reader]
+  rsm.mu.Lock()
+  rsm.rf.Snapshot(...)     ← writing to disk, takes milliseconds
+                              rsm.mu held the entire time
+
+Goroutine A  [client Submit()]
+  rsm.mu.Lock()            ← BLOCKED
+
+Goroutine C  [leaderMonitor]
+  rsm.mu.Lock()            ← BLOCKED
+```
+
+This isn't a deadlock — the write finishes eventually. But `TestSpeed4C` requires 1000 Puts in under 33 seconds. A disk write holding `rsm.mu` on every snapshot stalls all clients and causes the test to exceed the time limit.
+
+### The correct lock discipline
+
+```go
+op := msg.Command.(Op)
+result := rsm.sm.DoOp(op.Req)  // kv.mu acquired/released inside DoOp
+
+// No lock held here.
+if rsm.maxraftstate != -1 && rsm.rf.PersistBytes() >= rsm.maxraftstate {
+    snap := rsm.sm.Snapshot()          // acquires kv.mu internally, releases before return
+    rsm.rf.Snapshot(msg.CommandIndex, snap)  // acquires rf.mu internally; disk I/O here
+}
+
+// Only then acquire rsm.mu — for the minimum time needed.
+rsm.mu.Lock()
+pw, ok := rsm.pending[msg.CommandIndex]
+delete(rsm.pending, msg.CommandIndex)
+rsm.mu.Unlock()
+```
+
+`sm.Snapshot()` acquires and releases `kv.mu` entirely within its call. `rf.Snapshot()` acquires and releases Raft's internal lock. `rsm.mu` is never held across either call — it's held only for the map lookup immediately after.
+
+**Why `>=` and not `>`?** `PersistBytes()` reports the current encoded Raft state size. Using `>=` means we snapshot as soon as we hit the limit, not after we've already exceeded it. The test allows up to `8 * maxraftstate` before failing, so there's margin — but snapshotting promptly keeps the log compact and InstallSnapshot messages small.
+
+---
+
+## Two Paths, One Bridge
+
+When a server restarts after a crash, Raft replays log entries starting from `snapLastIdx+1`. If the state machine starts empty, `DoOp` would apply those entries on top of nothing — every result would be wrong. The state machine must be restored from the snapshot first.
+
+Raft already handles this — through the same mechanism it uses for `InstallSnapshot` RPCs. The reason is in Raft's `applier()` goroutine.
+
+### How Raft handles startup internally
+
+When `raft.Make()` is called after a crash:
+
+```
+raft.Make()
+  │
+  ├─ rf.snapshot = persister.ReadSnapshot()    // load snapshot bytes from disk
+  ├─ rf.readPersist(persister.ReadRaftState()) // restore log, snapLastIdx, term
+  │
+  └─ if rf.snapLastIdx > 0 && len(rf.snapshot) > 0:
+         rf.applySnapshotPending = true         // ← set the flag
+
+  go rf.applier(applyCh)
+```
+
+```
+applier() goroutine starts, sees the flag:
+  │
+  └─ sends ApplyMsg{SnapshotValid: true, Snapshot: rf.snapshot, ...}
+     rf.applySnapshotPending = false
+     // only then starts sending log entries from snapLastIdx+1
+```
+
+Raft's `applier()` sends the snapshot message *before* any log entries. The RSM's `reader()` receives it, calls `sm.Restore()`, and the state machine is back to the snapshot state. Then Raft sends the log entries that came after the snapshot — and `DoOp` applies them to an already-restored state.
+
+This is identical to the `InstallSnapshot` RPC path. The same flag (`applySnapshotPending`) is set in both cases:
+
+```
+┌─ Crash + Restart ────────────────────────┐
+│  raft.Make()                             │
+│  persister.ReadSnapshot() → rf.snapshot  │
+│  readPersist() → snapLastIdx > 0         │
+│  → applySnapshotPending = true           │
+└─────────────────────┬────────────────────┘
+                      │
+                      ▼
+               applySnapshotPending = true
+                      │
+┌─ InstallSnapshot RPC ─┴──────────────────┐
+│  leader sends RPC to lagging follower    │
+│  args.Data → rf.snapshot                 │
+│  rf.persist() → save to disk             │
+│  → applySnapshotPending = true           │
+└──────────────────────────────────────────┘
+                      │
+                      ▼
+            applier() goroutine
+            ApplyMsg{SnapshotValid: true}
+                      │
+                      ▼
+            rsm.reader()
+            sm.Restore(msg.Snapshot)
+                      │
+                      ▼
+            KVServer.Restore()
+            kv = snap.KV  |  ver = snap.Ver
+```
+
+Both scenarios — crash recovery from disk, and catching up a lagging follower via RPC — set the same flag, flow through the same goroutine, and produce the same `SnapshotValid` message. The RSM sees one event type and handles it once, regardless of origin.
+
+If the RSM had also called `persister.ReadSnapshot()` directly in `MakeRSM`, the state machine would have been restored twice: once by the RSM itself before `reader()` starts, and again when `applier()` sent its `SnapshotValid` message. The second restore would overwrite the first — same result, but the RSM would be reading from a layer it doesn't own.
+
+**Insight:** `applySnapshotPending` is the single bridge between Raft's internal snapshot state and the service layer. Two completely different events set it; one goroutine reads it; one message type carries the result out. The RSM doesn't know and doesn't need to know how the snapshot arrived.
+
+---
+
+## Final Results
+
+```
+--- PASS: TestSnapshot4C (rsm package)                           2.0s
+--- PASS: TestSnapshotRPC4C                                      3.3s
+--- PASS: TestSnapshotSize4C                                     8.6s
+--- PASS: TestSpeed4C                                           10.4s
+--- PASS: TestSnapshotRecover4C                                  6.1s
+--- PASS: TestSnapshotRecoverManyClients4C                       9.4s
+--- PASS: TestSnapshotUnreliable4C                              ~12s
+--- PASS: TestSnapshotUnreliableRecover4C                       ~14s
+--- PASS: TestSnapshotUnreliableRecoverConcurrentPartition4C    ~18s
+--- PASS: TestSnapshotUnreliableRecoverConcurrentPartitionLinearizable4C  ~25s
+
+ok  6.5840/kvraft1       81s   (race detector on)
+ok  6.5840/kvraft1/rsm   57s   (race detector on)
+```
+
+All 4A and 4B tests continue to pass — no regressions from the RSM changes.
+
+The speed test (`TestSpeed4C`) is the same benchmark as `TestSpeed4B`: 1000 sequential Puts, must complete faster than 3 ops per heartbeat interval. Snapshot triggering does add latency to the client whose op triggered it — `rf.Snapshot()` runs before the result is sent back. But snapshots happen infrequently (only when the log exceeds the threshold), so the overhead is amortized across many ops.
+
+---
+
+## What I Took Away
+
+1. **Check `SnapshotValid` explicitly — don't rely on `!CommandValid`.** When `SnapshotValid=true`, `CommandValid=false`, so a bare `if !msg.CommandValid { continue }` silently discards every snapshot message.
+
+2. **Don't hold `kv.mu` across `Submit()`.** `Submit()` blocks until `DoOp` runs, and `DoOp` needs `kv.mu`. If the caller holds it, both goroutines wait on each other forever.
+
+3. **Don't hold `rsm.mu` across `rf.Snapshot()`.** `rf.Snapshot()` writes to disk. Holding a lock during disk I/O blocks all concurrent clients for the duration of the write.
+
+4. **Snapshot both maps together.** Encoding `kv` without `ver` (or vice versa) produces a snapshot that decodes cleanly but contains inconsistent data. The failure surfaces as `ErrVersion` on unrelated Puts, not at decode time.
+
+5. **Raft's `applier()` sends `SnapshotValid` before any log entries on restart.** Crash recovery and `InstallSnapshot` both go through the same flag and the same goroutine. The RSM handles both with one code path.
+
+---
+
+Lab 4C is the last piece of the KV service series. The full stack — Raft consensus, RSM coordination, versioned KV storage, Clerk retry logic, and snapshot compaction — is in place. What's left is understanding how this scales beyond a single replicated group: sharding the key space across multiple Raft groups, routing Clerk requests to the right shard, and handling shard migration when the configuration changes. That's Lab 5.
