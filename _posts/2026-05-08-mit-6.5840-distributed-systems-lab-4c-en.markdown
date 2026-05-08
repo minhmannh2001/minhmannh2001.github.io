@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "MIT 6.5840 Lab 4C: Snapshots — Two Paths, One Bridge"
-date: 2026-05-08 00:00:00 +0700
+date: 2026-05-08 00:30:00 +0700
 excerpt: >
   Lab 4C adds snapshots to the KV service so servers don't have to replay the entire log on every restart. The implementation is small, but the tricky parts are in the lock discipline and understanding what Raft already does for you.
 comments: true
