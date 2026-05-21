@@ -1364,3 +1364,24 @@ td.gutter {
     grid-template-columns: 1fr;
   }
 }
+
+.post-lang-switch {
+  margin-bottom: 24px;
+}
+
+.post-lang-switch a {
+  display: inline-block;
+  padding: 6px 14px;
+  border: 1px solid #0085a1;
+  border-radius: 4px;
+  color: #0085a1;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.post-lang-switch a:hover {
+  background: #0085a1;
+  color: #fff;
+  text-decoration: none;
+}

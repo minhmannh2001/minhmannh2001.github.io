@@ -31,6 +31,35 @@ layout: base
         </div>
       {% endif %}
       
+      {% assign post_filename = page.path | split: '/' | last %}
+      {% assign post_lang = '' %}
+      {% if post_filename contains '-en.markdown' or post_filename contains '-en.md' %}
+        {% assign post_lang = 'en' %}
+      {% elsif post_filename contains '-vi.markdown' or post_filename contains '-vi.md' %}
+        {% assign post_lang = 'vi' %}
+      {% endif %}
+      {% if post_lang != '' %}
+        {% assign post_base_slug = post_filename | remove: '-en.markdown' | remove: '-en.md' | remove: '-vi.markdown' | remove: '-vi.md' %}
+        {% assign other_lang_post = nil %}
+        {% for p in site.posts %}
+          {% assign p_filename = p.path | split: '/' | last %}
+          {% assign p_slug = p_filename | remove: '-en.markdown' | remove: '-en.md' | remove: '-vi.markdown' | remove: '-vi.md' %}
+          {% if p_slug == post_base_slug and p.path != page.path %}
+            {% assign other_lang_post = p %}
+            {% break %}
+          {% endif %}
+        {% endfor %}
+        {% if other_lang_post %}
+        <div class="post-lang-switch">
+          {% if post_lang == 'vi' %}
+            <a href="{{ other_lang_post.url | prepend: site.baseurl }}">Read in English</a>
+          {% else %}
+            <a href="{{ other_lang_post.url | prepend: site.baseurl }}">Đọc bản tiếng Việt</a>
+          {% endif %}
+        </div>
+        {% endif %}
+      {% endif %}
+
       <article role="main" class="blog-post">
         {{ content }}
       </article>
