@@ -364,6 +364,7 @@ var main = {
       vp.showPage(newLang, 1);
       filterSeriesDetailPosts(newLang);
       updateLanguageSwitcher(newLang);
+      if (typeof updateSubtitle === 'function') { updateSubtitle(); }
       if (typeof updateLanguageFilterInfo === 'function') { updateLanguageFilterInfo(); }
 
       var currentPath = window.location.pathname;
