@@ -47,9 +47,12 @@ in those 62 lines say something about what this tool is for.
 | **6** | [Locking across layers: the two-writer race](https://minhmannh2001.github.io/2026/04/27/build-dbdb-from-scratch-part-6-locking-across-layers-en.html) |
 | **7** | [Two lines that hold everything: `commit`, `get`, `set`, `pop`](https://minhmannh2001.github.io/2026/04/28/build-dbdb-from-scratch-part-7-commit-en.html) |
 | **8** | [The thinnest layer: the `DBDB` facade](https://minhmannh2001.github.io/2026/04/29/build-dbdb-from-scratch-part-8-interface-en.html) |
-| **9** (this post) | `tool.py`: `finally` for cleanup, per-invocation transactions, stdout vs stderr |
+| **9** (this post) | The last translation: the CLI tool |
 | **10** | [What immutability costs: compaction](https://minhmannh2001.github.io/2026/05/01/build-dbdb-from-scratch-part-10-compaction-en.html) |
 | **Retrospective** | [What a database actually is](https://minhmannh2001.github.io/2026/05/02/build-dbdb-from-scratch-part-11-retrospective-en.html) |
+| **12** | [Replacing the BST with an AVL tree](https://minhmannh2001.github.io/2026/05/03/build-dbdb-from-scratch-part-12-avl-tree-en.html) |
+| **13** | [Adding a B-Tree](https://minhmannh2001.github.io/2026/05/04/build-dbdb-from-scratch-part-13-btree-en.html) |
+| **14** | [Atomic, thread-safe updates](https://minhmannh2001.github.io/2026/05/05/build-dbdb-from-scratch-part-14-atomic-update-en.html) |
 
 ---
 

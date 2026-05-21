@@ -40,7 +40,10 @@ Eleven posts, six layers, and one guarantee: if you called
 | **8** | [The thinnest layer: the `DBDB` facade](https://minhmannh2001.github.io/2026/04/29/build-dbdb-from-scratch-part-8-interface-en.html) |
 | **9** | [The last translation: the CLI tool](https://minhmannh2001.github.io/2026/04/30/build-dbdb-from-scratch-part-9-cli-en.html) |
 | **10** | [What immutability costs: compaction](https://minhmannh2001.github.io/2026/05/01/build-dbdb-from-scratch-part-10-compaction-en.html) |
-| **Retrospective** (this post) | The design thread end-to-end: six layers, one guarantee |
+| **Retrospective** (this post) | What a database actually is |
+| **12** | [Replacing the BST with an AVL tree](https://minhmannh2001.github.io/2026/05/03/build-dbdb-from-scratch-part-12-avl-tree-en.html) |
+| **13** | [Adding a B-Tree](https://minhmannh2001.github.io/2026/05/04/build-dbdb-from-scratch-part-13-btree-en.html) |
+| **14** | [Atomic, thread-safe updates](https://minhmannh2001.github.io/2026/05/05/build-dbdb-from-scratch-part-14-atomic-update-en.html) |
 
 ---
 

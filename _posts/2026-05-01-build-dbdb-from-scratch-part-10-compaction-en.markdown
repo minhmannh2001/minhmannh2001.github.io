@@ -59,8 +59,11 @@ There's no mechanism to remove them. That's what compaction is for.
 | **7** | [Two lines that hold everything: `commit`, `get`, `set`, `pop`](https://minhmannh2001.github.io/2026/04/28/build-dbdb-from-scratch-part-7-commit-en.html) |
 | **8** | [The thinnest layer: the `DBDB` facade](https://minhmannh2001.github.io/2026/04/29/build-dbdb-from-scratch-part-8-interface-en.html) |
 | **9** | [The last translation: the CLI tool](https://minhmannh2001.github.io/2026/04/30/build-dbdb-from-scratch-part-9-cli-en.html) |
-| **10** (this post) | Compaction: atomic swap, TOCTOU race, `is_file_replaced()`, `_prepare_write()` |
+| **10** (this post) | What immutability costs: compaction |
 | **Retrospective** | [What a database actually is](https://minhmannh2001.github.io/2026/05/02/build-dbdb-from-scratch-part-11-retrospective-en.html) |
+| **12** | [Replacing the BST with an AVL tree](https://minhmannh2001.github.io/2026/05/03/build-dbdb-from-scratch-part-12-avl-tree-en.html) |
+| **13** | [Adding a B-Tree](https://minhmannh2001.github.io/2026/05/04/build-dbdb-from-scratch-part-13-btree-en.html) |
+| **14** | [Atomic, thread-safe updates](https://minhmannh2001.github.io/2026/05/05/build-dbdb-from-scratch-part-14-atomic-update-en.html) |
 
 ---
 
