@@ -119,7 +119,8 @@ timezone: "Europe/Berlin"
 markdown: kramdown
 highlighter: rouge
 #permalink: /:year/:month/:day/:title/.html
-paginate: 10
+# paginate disabled — language-aware virtual pagination is handled client-side in main.js
+# paginate: 10
 
 kramdown:
   input: GFM

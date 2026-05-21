@@ -139,201 +139,67 @@ var main = {
       var stored = localStorage.getItem('siteLanguage');
       return stored || 'vi';
     };
-    
+
     // Set language preference
     var setLanguagePreference = function(lang) {
       localStorage.setItem('siteLanguage', lang);
     };
-    
-    // Filter posts based on language
-    var filterPosts = function(lang, isInitialLoad) {
-      var posts = document.querySelectorAll('.post-preview');
-      var visibleCount = 0;
-      var hiddenCount = 0;
-      var hasMultipleLanguages = false;
-      
-      // Check if there are posts in multiple languages on this page
-      var languagesFound = new Set();
-      posts.forEach(function(post) {
-        var postLang = post.getAttribute('data-post-lang') || 'vi';
-        languagesFound.add(postLang);
-      });
-      hasMultipleLanguages = languagesFound.size > 1;
-      
-      // Always filter based on language preference
-      // Show/hide posts based on language
-      posts.forEach(function(post) {
-        var postLang = post.getAttribute('data-post-lang');
-        if (postLang === lang || !postLang) {
-          post.style.display = '';
-          visibleCount++;
-        } else {
-          post.style.display = 'none';
-          hiddenCount++;
+
+    // Virtual pagination
+    var vp = {
+      postsPerPage: 10,
+      page: 1,
+      lang: 'vi',
+
+      allPosts: function() {
+        return Array.from(document.querySelectorAll('.post-preview'));
+      },
+
+      postsForLang: function(lang) {
+        return this.allPosts().filter(function(p) {
+          return (p.getAttribute('data-post-lang') || 'vi') === lang;
+        });
+      },
+
+      showPage: function(lang, page) {
+        this.lang = lang;
+        this.page = page;
+        var langPosts = this.postsForLang(lang);
+        var start = (page - 1) * this.postsPerPage;
+        var visible = new Set(langPosts.slice(start, start + this.postsPerPage));
+        this.allPosts().forEach(function(p) {
+          p.style.display = visible.has(p) ? '' : 'none';
+        });
+        this.renderPager(langPosts.length);
+        var noMsg = document.getElementById('no-posts-message');
+        if (langPosts.length === 0) {
+          if (!noMsg) {
+            noMsg = document.createElement('div');
+            noMsg.id = 'no-posts-message';
+            noMsg.className = 'no-posts-message';
+            noMsg.textContent = 'No posts found for the selected language.';
+            var list = document.querySelector('.posts-list');
+            if (list) list.appendChild(noMsg);
+          }
+          noMsg.style.display = 'block';
+        } else if (noMsg) {
+          noMsg.style.display = 'none';
         }
-      });
-      
-      // Handle pagination - check if there are more posts in selected language
-      var pager = document.getElementById('post-pager');
-      if (pager) {
-        if (hiddenCount > 0) {
-          // We're filtering - temporarily hide pagination while checking
-          pager.style.display = 'none';
-          
-          // Check if there are more posts in selected language on next/previous pages
-          checkPaginationForLanguage(lang, function(hasMorePosts, hasPreviousPosts) {
-            if (pager) {
-              var nextLink = pager.querySelector('.next');
-              var prevLink = pager.querySelector('.previous');
-              
-              // Show pagination container if either button should be visible
-              if (hasMorePosts || hasPreviousPosts) {
-                pager.style.display = '';
-                
-                // Show/hide individual buttons
-                if (nextLink) {
-                  nextLink.style.display = hasMorePosts ? '' : 'none';
-                }
-                if (prevLink) {
-                  prevLink.style.display = hasPreviousPosts ? '' : 'none';
-                }
-              } else {
-                pager.style.display = 'none';
-              }
-            }
-          });
-        } else {
-          // No filtering (all posts visible) - show pagination as normal
-          pager.style.display = '';
-        }
-      }
-      
-      // Show message if no posts found
-      var postsList = document.querySelector('.posts-list');
-      var noPostsMsg = document.getElementById('no-posts-message');
-      if (visibleCount === 0 && posts.length > 0) {
-        if (!noPostsMsg) {
-          noPostsMsg = document.createElement('div');
-          noPostsMsg.id = 'no-posts-message';
-          noPostsMsg.className = 'no-posts-message';
-          noPostsMsg.textContent = 'No posts found for the selected language.';
-          postsList.appendChild(noPostsMsg);
-        }
-        noPostsMsg.style.display = 'block';
-      } else if (noPostsMsg) {
-        noPostsMsg.style.display = 'none';
+      },
+
+      renderPager: function(total) {
+        var pager = document.getElementById('post-pager');
+        if (!pager) return;
+        var totalPages = Math.ceil(total / this.postsPerPage);
+        if (totalPages <= 1) { pager.style.display = 'none'; return; }
+        pager.style.display = '';
+        var prevEl = pager.querySelector('.previous');
+        var nextEl = pager.querySelector('.next');
+        if (prevEl) prevEl.style.display = this.page > 1 ? '' : 'none';
+        if (nextEl) nextEl.style.display = this.page < totalPages ? '' : 'none';
       }
     };
-    
-    // Check if there are more posts in the selected language on next/previous pages
-    var checkPaginationForLanguage = function(lang, callback) {
-      var pager = document.getElementById('post-pager');
-      if (!pager) {
-        callback(false, false);
-        return;
-      }
-      
-      var nextPageLink = pager.querySelector('.next a');
-      var prevPageLink = pager.querySelector('.previous a');
-      
-      var hasMorePosts = false;
-      var hasPreviousPosts = false;
-      var checksCompleted = 0;
-      var totalChecks = (nextPageLink ? 1 : 0) + (prevPageLink ? 1 : 0);
-      
-      if (totalChecks === 0) {
-        callback(false, false);
-        return;
-      }
-      
-      var checkComplete = function() {
-        checksCompleted++;
-        if (checksCompleted === totalChecks) {
-          callback(hasMorePosts, hasPreviousPosts);
-        }
-      };
-      
-      // Check next page
-      if (nextPageLink) {
-        var nextPageUrl = nextPageLink.getAttribute('href');
-        if (nextPageUrl) {
-          // Make absolute URL if needed
-          if (nextPageUrl.startsWith('/')) {
-            nextPageUrl = window.location.origin + nextPageUrl;
-          } else if (!nextPageUrl.startsWith('http')) {
-            nextPageUrl = window.location.origin + '/' + nextPageUrl;
-          }
-          
-          fetch(nextPageUrl)
-            .then(function(response) {
-              return response.text();
-            })
-            .then(function(html) {
-              // Parse the HTML to count posts in the selected language
-              var parser = new DOMParser();
-              var doc = parser.parseFromString(html, 'text/html');
-              var nextPagePosts = doc.querySelectorAll('.post-preview[data-post-lang="' + lang + '"]');
-              
-              // Also count posts without data-post-lang (default to 'vi')
-              var postsWithoutLang = doc.querySelectorAll('.post-preview:not([data-post-lang])');
-              var count = nextPagePosts.length;
-              if (lang === 'vi') {
-                count += postsWithoutLang.length;
-              }
-              
-              hasMorePosts = count > 0;
-              checkComplete();
-            })
-            .catch(function(error) {
-              console.error('Error checking next page:', error);
-              checkComplete();
-            });
-        } else {
-          checkComplete();
-        }
-      }
-      
-      // Check previous page
-      if (prevPageLink) {
-        var prevPageUrl = prevPageLink.getAttribute('href');
-        if (prevPageUrl) {
-          // Make absolute URL if needed
-          if (prevPageUrl.startsWith('/')) {
-            prevPageUrl = window.location.origin + prevPageUrl;
-          } else if (!prevPageUrl.startsWith('http')) {
-            prevPageUrl = window.location.origin + '/' + prevPageUrl;
-          }
-          
-          fetch(prevPageUrl)
-            .then(function(response) {
-              return response.text();
-            })
-            .then(function(html) {
-              // Parse the HTML to count posts in the selected language
-              var parser = new DOMParser();
-              var doc = parser.parseFromString(html, 'text/html');
-              var prevPagePosts = doc.querySelectorAll('.post-preview[data-post-lang="' + lang + '"]');
-              
-              // Also count posts without data-post-lang (default to 'vi')
-              var postsWithoutLang = doc.querySelectorAll('.post-preview:not([data-post-lang])');
-              var count = prevPagePosts.length;
-              if (lang === 'vi') {
-                count += postsWithoutLang.length;
-              }
-              
-              hasPreviousPosts = count > 0;
-              checkComplete();
-            })
-            .catch(function(error) {
-              console.error('Error checking previous page:', error);
-              checkComplete();
-            });
-        } else {
-          checkComplete();
-        }
-      }
-    };
-    
+
     // Update language switcher: mark the active option in the dropdown
     var updateLanguageSwitcher = function(lang) {
       $('.lang-option').each(function() {
@@ -348,7 +214,7 @@ var main = {
       });
       $('.lang-dropdown[data-mode="selector"]').attr('data-current-lang', lang);
     };
-    
+
     // Detect current page language from URL
     var detectPageLanguage = function() {
       var currentPath = window.location.pathname;
@@ -363,7 +229,7 @@ var main = {
       }
       return null;
     };
-    
+
     // Series detail page: filter list by language, renumber visible rows, toggle empty message
     var filterSeriesDetailPosts = function(lang) {
       var root = document.querySelector('.series-detail[data-series-detail="true"]');
@@ -410,7 +276,7 @@ var main = {
         }
       }
     };
-    
+
     // Toggle the language dropdown open/closed
     $(document).on('click', '.lang-dropdown-btn', function(e) {
       e.stopPropagation();
@@ -430,6 +296,20 @@ var main = {
       if (!$(e.target).closest('.lang-dropdown').length) {
         $('.lang-dropdown-menu.open').removeClass('open');
         $('.lang-dropdown-btn').attr('aria-expanded', 'false');
+      }
+    });
+
+    // Pager navigation
+    $(document).on('click', '#post-pager .previous a', function(e) {
+      e.preventDefault();
+      if (vp.page > 1) { vp.showPage(vp.lang, vp.page - 1); window.scrollTo(0, 0); }
+    });
+    $(document).on('click', '#post-pager .next a', function(e) {
+      e.preventDefault();
+      var total = vp.postsForLang(vp.lang).length;
+      if (vp.page < Math.ceil(total / vp.postsPerPage)) {
+        vp.showPage(vp.lang, vp.page + 1);
+        window.scrollTo(0, 0);
       }
     });
 
@@ -481,15 +361,7 @@ var main = {
       }
 
       setLanguagePreference(newLang);
-
-      // On paginated pages (/page2, /page3, …) redirect to page 1 so the
-      // language filter starts from the beginning instead of showing 0 posts.
-      if (window.location.pathname.match(/^\/page\d+\/?$/)) {
-        window.location.href = '/';
-        return;
-      }
-
-      filterPosts(newLang, false);
+      vp.showPage(newLang, 1);
       filterSeriesDetailPosts(newLang);
       updateLanguageSwitcher(newLang);
 
@@ -511,11 +383,11 @@ var main = {
         return;
       }
     });
-    
+
     // Detect current page language and update preference
     var detectedLang = detectPageLanguage();
     var preferredLang = getLanguagePreference();
-    
+
     if (detectedLang) {
       // If we're on a language-specific page, use that language
       setLanguagePreference(detectedLang);
@@ -525,10 +397,10 @@ var main = {
       // Use stored preference or default
       updateLanguageSwitcher(preferredLang);
     }
-    
-    // Apply language filter on home page
-    filterPosts(preferredLang, true);
-    
+
+    // Apply virtual pagination on home page
+    vp.showPage(preferredLang, 1);
+
     // Series detail: align list with preference (refine after inline script)
     filterSeriesDetailPosts(preferredLang);
   }
