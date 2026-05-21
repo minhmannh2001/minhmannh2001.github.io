@@ -48,17 +48,24 @@ use-site-title: true
   // Update language filter info
   function updateLanguageFilterInfo() {
     var preferredLang = localStorage.getItem('siteLanguage') || 'vi';
-    
-    // Fixed post counts
-    // Count posts by language directly from DOM (all posts are rendered statically)
+
+    // Build slug sets per language to detect posts without a translation counterpart
     var allPostEls = document.querySelectorAll('.post-preview[data-post-lang]');
-    var viPostCount = 0, enPostCount = 0;
+    var viSlugs = new Set();
+    var enSlugs = new Set();
     allPostEls.forEach(function(p) {
-      var pl = p.getAttribute('data-post-lang');
-      if (pl === 'vi') viPostCount++;
-      else if (pl === 'en') enPostCount++;
+      var lang = p.getAttribute('data-post-lang');
+      var slug = p.getAttribute('data-post-slug') || '';
+      if (lang === 'vi') viSlugs.add(slug);
+      else if (lang === 'en') enSlugs.add(slug);
     });
-    
+
+    // Count posts that exist only in one language (no translation)
+    var enOnlyCount = 0;
+    enSlugs.forEach(function(slug) { if (!viSlugs.has(slug)) enOnlyCount++; });
+    var viOnlyCount = 0;
+    viSlugs.forEach(function(slug) { if (!enSlugs.has(slug)) viOnlyCount++; });
+
     // Get or create info element
     var infoElement = document.getElementById('language-filter-info');
     if (!infoElement) {
@@ -70,32 +77,23 @@ use-site-title: true
         postsList.parentNode.insertBefore(infoElement, postsList);
       }
     }
-    
-    // Show info if there are posts in both languages
-    if (viPostCount > 0 && enPostCount > 0) {
+
+    var exclusiveCount = preferredLang === 'en' ? viOnlyCount : enOnlyCount;
+    if (exclusiveCount > 0) {
       infoElement.style.display = 'block';
-      
-      // Update content based on language
       if (preferredLang === 'en') {
-        infoElement.innerHTML = '<p><strong>You are viewing English posts only.</strong> ' + viPostCount + ' Vietnamese post' + (viPostCount > 1 ? 's are' : ' is') + ' hidden. <a href="#" class="show-all-posts" data-lang="vi">Switch to Vietnamese</a> to view them.</p>';
+        infoElement.innerHTML = '<p><strong>You are viewing English posts.</strong> ' + viOnlyCount + ' post' + (viOnlyCount > 1 ? 's are' : ' is') + ' only available in Vietnamese (no English version). <a href="#" class="show-all-posts" data-lang="vi">Switch to Vietnamese</a> to view them.</p>';
       } else {
-        infoElement.innerHTML = '<p><strong>Bạn đang xem các bài viết tiếng Việt.</strong> Có ' + enPostCount + ' bài viết tiếng Anh chưa được hiển thị. <a href="#" class="show-all-posts" data-lang="en">Chuyển sang tiếng Anh</a> để xem chúng.</p>';
+        infoElement.innerHTML = '<p><strong>Bạn đang xem các bài viết tiếng Việt.</strong> Có ' + enOnlyCount + ' bài chỉ có trong tiếng Anh (chưa có bản tiếng Việt). <a href="#" class="show-all-posts" data-lang="en">Chuyển sang tiếng Anh</a> để xem.</p>';
       }
-      
-      // Add click handler for language switch link
+
       var switchLink = infoElement.querySelector('.show-all-posts');
       if (switchLink) {
         switchLink.addEventListener('click', function(e) {
           e.preventDefault();
           var targetLang = this.getAttribute('data-lang');
-          localStorage.setItem('siteLanguage', targetLang);
-          // Trigger language filter update by clicking the language switcher
-          var langSwitcher = document.querySelector('.language-switcher-link[data-lang-selector="true"]');
-          if (langSwitcher) {
-            langSwitcher.click();
-          } else {
-            window.location.reload();
-          }
+          var opt = document.querySelector('.lang-dropdown .lang-option[data-lang="' + targetLang + '"]');
+          if (opt) { opt.click(); } else { localStorage.setItem('siteLanguage', targetLang); window.location.reload(); }
         });
       }
     } else {
@@ -141,7 +139,8 @@ use-site-title: true
   {% else %}
     {% assign post_lang = 'vi' %}
   {% endif %}
-  <article class="post-preview" data-post-lang="{{ post_lang }}" style="display:none">
+  {% assign post_slug = post_filename | remove: '-en.markdown' | remove: '-en.md' | remove: '-vi.markdown' | remove: '-vi.md' | remove: '.markdown' | remove: '.md' %}
+  <article class="post-preview" data-post-lang="{{ post_lang }}" data-post-slug="{{ post_slug }}" style="display:none">
     <a href="{{ post.url | prepend: site.baseurl }}">
 	  <h2 class="post-title">{{ post.title }}</h2>
 
