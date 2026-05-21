@@ -28,6 +28,18 @@ Inspired by the book chapter, this series is my own rebuild: I get stuck, fix th
 | **0** (this post) | `pyproject.toml`, smoke import test, pytest + BDD, Makefile |
 | **1** | [Append-only storage and an atomic root pointer](https://minhmannh2001.github.io/2026/04/22/build-dbdb-from-scratch-part-1-append-only-storage-en.html) |
 | **2** | [`ValueRef` and lazy loading](https://minhmannh2001.github.io/2026/04/23/build-dbdb-from-scratch-part-2-valueref-en.html) |
+| **3** | [Immutable `BinaryNode`, copy-on-write path updates, `BinaryNodeRef`](https://minhmannh2001.github.io/2026/04/24/build-dbdb-from-scratch-part-3-binarynode-en.html) |
+| **4** | [`LogicalBase` lifecycle and `BinaryTree` algorithms](https://minhmannh2001.github.io/2026/04/25/build-dbdb-from-scratch-part-4-logical-layer-en.html) |
+| **Interlude** | [One key's journey through all four layers](https://minhmannh2001.github.io/2026/04/26/build-dbdb-from-scratch-part-5-how-it-all-fits-en.html) |
+| **6** | [File locking with `portalocker` and the two-writer race](https://minhmannh2001.github.io/2026/04/27/build-dbdb-from-scratch-part-6-locking-across-layers-en.html) |
+| **7** | [Cascading dirty writes and the 8-byte root pointer flip](https://minhmannh2001.github.io/2026/04/28/build-dbdb-from-scratch-part-7-commit-en.html) |
+| **8** | [The `DBDB` facade — 55 lines over the full stack](https://minhmannh2001.github.io/2026/04/29/build-dbdb-from-scratch-part-8-interface-en.html) |
+| **9** | [`tool.py` — shell commands over the Python API](https://minhmannh2001.github.io/2026/04/30/build-dbdb-from-scratch-part-9-cli-en.html) |
+| **10** | [Compaction — reclaiming space from append-only storage](https://minhmannh2001.github.io/2026/05/01/build-dbdb-from-scratch-part-10-compaction-en.html) |
+| **Retrospective** | [Six layers, one guarantee — what each decision was hiding](https://minhmannh2001.github.io/2026/05/02/build-dbdb-from-scratch-part-11-retrospective-en.html) |
+| **12** | [Replacing BST with AVL — self-balancing, height-tracked nodes](https://minhmannh2001.github.io/2026/05/03/build-dbdb-from-scratch-part-12-avl-tree-en.html) |
+| **13** | [Adding a B-tree — wide nodes, top-down splitting, disk-optimized](https://minhmannh2001.github.io/2026/05/04/build-dbdb-from-scratch-part-13-btree-en.html) |
+| **14** | [Atomic `update()`, concurrency bugs, and optimistic locking](https://minhmannh2001.github.io/2026/05/05/build-dbdb-from-scratch-part-14-atomic-update-en.html) |
 
 ---
 
