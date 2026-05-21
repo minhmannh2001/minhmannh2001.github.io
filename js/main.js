@@ -481,6 +481,14 @@ var main = {
       }
 
       setLanguagePreference(newLang);
+
+      // On paginated pages (/page2, /page3, …) redirect to page 1 so the
+      // language filter starts from the beginning instead of showing 0 posts.
+      if (window.location.pathname.match(/^\/page\d+\/?$/)) {
+        window.location.href = '/';
+        return;
+      }
+
       filterPosts(newLang, false);
       filterSeriesDetailPosts(newLang);
       updateLanguageSwitcher(newLang);
