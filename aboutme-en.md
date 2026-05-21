@@ -8,7 +8,7 @@ permalink: /aboutme-en.html
 
 # About My Blog
 
-Hello! I'm **Manh**, born in 2001. I'm a **backend developer** with over **3 years of experience**. Currently working at a middle level, I focus on building reliable, scalable systems and continuously improving my skills every day.
+Hello! I'm **Manh**, born in 2001. I'm a **backend developer** with over **3 years of experience**. I recently reached the senior level, and I'm focused on designing reliable, scalable, high-performance systems.
 
 In middle school, I really enjoyed playing games, and when I reached high school, facing the choice of a future career, I decided to study **Computer Science** at **Hanoi University of Science and Technology**. At that time, I simply thought I would learn game programming, not knowing that game programming is just a small part of the vast Information Technology field, or whether my direction would change during my studies. Now, looking back at my journey, I feel it was the right decision.
 
