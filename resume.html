@@ -1,0 +1,302 @@
+---
+layout: page
+title: Resume
+permalink: /resume.html
+---
+
+<div class="resume-pdf-bar">
+  <a href="/NGUYEN%20MANH%20-%20SOFTWARE%20ENGINEER.pdf" download class="resume-pdf-btn">Download PDF</a>
+</div>
+
+<!-- Header -->
+<div class="resume-header">
+  <h1 class="resume-name">Nguyen Manh</h1>
+  <div class="resume-title">Senior Backend Engineer &middot; Python | Golang | TypeScript</div>
+  <div class="resume-contacts">
+    <span>Hanoi, Vietnam</span>
+    <span class="resume-dot">&middot;</span>
+    <a href="mailto:nguyenminhmannh2001@gmail.com">nguyenminhmannh2001@gmail.com</a>
+    <span class="resume-dot">&middot;</span>
+    <span>0395 237 842</span>
+    <span class="resume-dot">&middot;</span>
+    <a href="https://www.linkedin.com/in/nguyenminhmannh2001/" target="_blank" rel="noopener">LinkedIn</a>
+    <span class="resume-dot">&middot;</span>
+    <a href="https://minhmannh2001.github.io/" target="_blank" rel="noopener">Blog</a>
+  </div>
+</div>
+
+<!-- Summary -->
+<section class="resume-section">
+  <h2 class="resume-section-title">Summary</h2>
+  <p class="resume-summary">Backend engineer with 3+ years of experience building scalable distributed systems and multi-tenant SaaS platforms. Strong expertise in microservices architecture, event-driven design, serverless systems, and performance optimization. Full-stack experience with TypeScript/React. Passionate about delivering reliable, high-performance solutions that drive business efficiency and reduce operational costs.</p>
+</section>
+
+<!-- Technical Skills -->
+<section class="resume-section">
+  <h2 class="resume-section-title">Technical Skills</h2>
+  <div class="resume-skills">
+    <div class="resume-skill-row">
+      <span class="resume-skill-label">Languages</span>
+      <div class="resume-skill-tags">
+        <span class="project-tag">Python</span>
+        <span class="project-tag">Golang</span>
+        <span class="project-tag">TypeScript</span>
+        <span class="project-tag">JavaScript</span>
+      </div>
+    </div>
+    <div class="resume-skill-row">
+      <span class="resume-skill-label">Backend</span>
+      <div class="resume-skill-tags">
+        <span class="project-tag">Flask</span>
+        <span class="project-tag">Gin</span>
+        <span class="project-tag">Express.js</span>
+        <span class="project-tag">GraphQL</span>
+        <span class="project-tag">gRPC</span>
+        <span class="project-tag">Celery</span>
+        <span class="project-tag">SQLAlchemy</span>
+      </div>
+    </div>
+    <div class="resume-skill-row">
+      <span class="resume-skill-label">Frontend</span>
+      <div class="resume-skill-tags">
+        <span class="project-tag">React</span>
+        <span class="project-tag">Redux Toolkit</span>
+        <span class="project-tag">Material-UI</span>
+      </div>
+    </div>
+    <div class="resume-skill-row">
+      <span class="resume-skill-label">Databases</span>
+      <div class="resume-skill-tags">
+        <span class="project-tag">PostgreSQL</span>
+        <span class="project-tag">MongoDB</span>
+        <span class="project-tag">Redis</span>
+        <span class="project-tag">DynamoDB</span>
+        <span class="project-tag">Elasticsearch</span>
+      </div>
+    </div>
+    <div class="resume-skill-row">
+      <span class="resume-skill-label">Infrastructure</span>
+      <div class="resume-skill-tags">
+        <span class="project-tag">Docker</span>
+        <span class="project-tag">AWS Lambda</span>
+        <span class="project-tag">SQS</span>
+        <span class="project-tag">S3</span>
+        <span class="project-tag">Kafka</span>
+        <span class="project-tag">Prometheus</span>
+        <span class="project-tag">Grafana</span>
+        <span class="project-tag">GitHub CI</span>
+      </div>
+    </div>
+    <div class="resume-skill-row">
+      <span class="resume-skill-label">Architecture</span>
+      <div class="resume-skill-tags">
+        <span class="project-tag">Microservices</span>
+        <span class="project-tag">Event-driven</span>
+        <span class="project-tag">Serverless</span>
+        <span class="project-tag">Monorepo</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Experience -->
+<section class="resume-section">
+  <h2 class="resume-section-title">Experience</h2>
+
+  <div class="resume-job">
+    <div class="resume-job-header">
+      <div>
+        <span class="resume-job-title">FullStack Engineer</span>
+        <span class="resume-job-sep">&nbsp;&middot;&nbsp;</span>
+        <span class="resume-job-company">Geniee Inc.</span>
+      </div>
+      <span class="resume-job-period">Oct 2025 – Present</span>
+    </div>
+    <div class="resume-job-location">Hanoi, Vietnam</div>
+    <p class="resume-job-intro">Full-stack work in a large monorepo for two core SaaS products: <strong>Chikyu</strong> (SFA/CRM platform) and <strong>ARCH</strong> (Notion-like content customization &amp; data visualization platform). Leveraged AI-assisted development tools (Cursor &amp; Claude) to accelerate feature delivery and improve code quality.</p>
+
+    <div class="resume-job-sub">Chikyu — SFA/CRM</div>
+    <ul class="resume-job-bullets">
+      <li>Designed and implemented Zoom Meeting/Webinar integration with secure OAuth and async data sync, eliminating manual data entry and automating attendance tracking for 1,000+ participants.</li>
+      <li>Built a high-throughput bulk CSV import pipeline supporting 5,000+ records per batch using S3 and SQS, with real-time progress tracking and idempotent processing.</li>
+      <li>Architected an event-driven Process Builder automation tool enabling business users to configure complex workflows without writing code.</li>
+      <li>Developed and optimized a fully serverless backend with AWS Lambda, SQS queues, and S3 triggers in a multi-tenant environment.</li>
+      <li>Implemented a robust SQS job queue with deduplication, concurrency control, and exponential backoff for high-load reliability.</li>
+    </ul>
+
+    <div class="resume-job-sub">ARCH — Notion-like Platform</div>
+    <ul class="resume-job-bullets">
+      <li>Eliminated N+1 query problems in GraphQL resolvers using DataLoader batching, significantly improving query performance.</li>
+      <li>Optimized complex database queries with composite indexes to reduce execution time.</li>
+      <li>Implemented a reliable background job system with idempotency and retry mechanisms for batch operations including email notifications.</li>
+      <li>Designed a direct client-to-GCS file upload solution using signed URLs, removing server-side bottlenecks for concurrent large file uploads.</li>
+      <li>Built responsive, maintainable React/TypeScript page flows and reusable UI components from product and design requirements.</li>
+    </ul>
+
+    <div class="resume-job-tech">
+      <span class="project-tag">TypeScript</span>
+      <span class="project-tag">Node.js</span>
+      <span class="project-tag">React</span>
+      <span class="project-tag">GraphQL</span>
+      <span class="project-tag">PostgreSQL</span>
+      <span class="project-tag">AWS Lambda</span>
+      <span class="project-tag">SQS</span>
+      <span class="project-tag">Redis</span>
+    </div>
+  </div>
+
+  <div class="resume-job">
+    <div class="resume-job-header">
+      <div>
+        <span class="resume-job-title">Backend Engineer</span>
+        <span class="resume-job-sep">&nbsp;&middot;&nbsp;</span>
+        <span class="resume-job-company">Viettel Cyber Security</span>
+      </div>
+      <span class="resume-job-period">Jul 2023 – Oct 2025</span>
+    </div>
+    <div class="resume-job-location">Hanoi, Vietnam</div>
+    <p class="resume-job-intro">Developed core backend services for <strong>SOAR</strong> (Security Orchestration, Automation, and Response) — a large-scale, event-driven, multi-tenant system processing 50K+ security events daily.</p>
+    <ul class="resume-job-bullets">
+      <li>Designed a task dispatching and coordination system for playbook automation with robust error handling and idempotency, achieving a 99% success rate across 50K+ daily events.</li>
+      <li>Implemented the Outbox Pattern to ensure data consistency across PostgreSQL, Kafka, and Elasticsearch, eliminating race conditions and data loss.</li>
+      <li>Applied Celery for asynchronous task processing, enabling reliable and efficient execution of security events across the platform.</li>
+      <li>Implemented PgPool connection pooling to improve connection performance, reduce DB resource usage, and minimize connection-related errors.</li>
+      <li>Integrated an ML prediction pipeline into workflows, reducing MTTR by 20%.</li>
+      <li>Refactored the orchestration service using Go's Docker SDK to dynamically spawn isolated Docker containers for secure workflow task execution.</li>
+      <li>Built a real-time notification system with Kafka and WebSocket, providing instant alerts and improving analyst response time.</li>
+      <li>Applied fault-tolerant patterns (circuit breaker, exponential backoff, idempotent retries) to enhance overall system stability.</li>
+    </ul>
+    <div class="resume-job-tech">
+      <span class="project-tag">Python</span>
+      <span class="project-tag">Flask</span>
+      <span class="project-tag">Golang</span>
+      <span class="project-tag">Celery</span>
+      <span class="project-tag">gRPC</span>
+      <span class="project-tag">PostgreSQL</span>
+      <span class="project-tag">Kafka</span>
+      <span class="project-tag">Elasticsearch</span>
+      <span class="project-tag">Docker</span>
+      <span class="project-tag">Prometheus</span>
+      <span class="project-tag">Grafana</span>
+    </div>
+  </div>
+</section>
+
+<!-- Projects -->
+<section class="resume-section">
+  <h2 class="resume-section-title">Projects</h2>
+
+  <div class="resume-project">
+    <div class="resume-project-header">
+      <span class="resume-project-name">Simple App Builder</span>
+      <a href="https://github.com/minhmannh2001/simple-app-builder" target="_blank" rel="noopener" class="resume-project-link">GitHub &rarr;</a>
+    </div>
+    <p class="resume-project-desc">A minimal AI app builder. Build full-stack web apps from natural language in a browser-based IDE. Generates React + Vite projects, manages files in SQLite via Prisma, and previews live in WebContainer.</p>
+    <div class="resume-project-tech">
+      <span class="project-tag">TypeScript</span>
+      <span class="project-tag">Next.js</span>
+      <span class="project-tag">React</span>
+      <span class="project-tag">Prisma</span>
+      <span class="project-tag">SQLite</span>
+      <span class="project-tag">WebContainer</span>
+    </div>
+  </div>
+
+  <div class="resume-project">
+    <div class="resume-project-header">
+      <span class="resume-project-name">DBDB — Dog Bed Database</span>
+      <a href="https://github.com/minhmannh2001/dbdb" target="_blank" rel="noopener" class="resume-project-link">GitHub &rarr;</a>
+    </div>
+    <p class="resume-project-desc">A persistent key-value store in 665 lines, rebuilt from <em>500 Lines or Less</em>. Append-only binary file, immutable BST, copy-on-write, compaction, concurrent access safety, CLI. Extended with AVL tree and B-tree variants.</p>
+    <div class="resume-project-tech">
+      <span class="project-tag">Python</span>
+      <span class="project-tag">BST</span>
+      <span class="project-tag">AVL Tree</span>
+      <span class="project-tag">B-Tree</span>
+      <span class="project-tag">pytest-bdd</span>
+    </div>
+  </div>
+
+  <div class="resume-project">
+    <div class="resume-project-header">
+      <span class="resume-project-name">MIT 6.5840 Distributed Systems Labs</span>
+      <a href="https://github.com/minhmannh2001/mit-6.5840-distributed-system-labs" target="_blank" rel="noopener" class="resume-project-link">GitHub &rarr;</a>
+    </div>
+    <p class="resume-project-desc">All labs from MIT's graduate distributed systems course: MapReduce, Raft consensus, fault-tolerant key-value store, and sharded KV with dynamic rebalancing. All tests passing.</p>
+    <div class="resume-project-tech">
+      <span class="project-tag">Go</span>
+      <span class="project-tag">Raft</span>
+      <span class="project-tag">MapReduce</span>
+      <span class="project-tag">RPC</span>
+      <span class="project-tag">Concurrency</span>
+    </div>
+  </div>
+
+  <div class="resume-project">
+    <div class="resume-project-header">
+      <span class="resume-project-name">Video Platform System Design</span>
+      <a href="https://github.com/minhmannh2001/demo-video-platform-system-design" target="_blank" rel="noopener" class="resume-project-link">GitHub &rarr;</a>
+    </div>
+    <p class="resume-project-desc">YouTube architecture, made local and runnable. Upload &rarr; async HLS transcode &rarr; MongoDB metadata &rarr; adaptive streaming. A working reference implementation paired with the YouTube system design blog post.</p>
+    <div class="resume-project-tech">
+      <span class="project-tag">Go</span>
+      <span class="project-tag">HLS</span>
+      <span class="project-tag">MongoDB</span>
+      <span class="project-tag">FFmpeg</span>
+      <span class="project-tag">Docker</span>
+      <span class="project-tag">Redis</span>
+    </div>
+  </div>
+
+  <div class="resume-project">
+    <div class="resume-project-header">
+      <span class="resume-project-name">Twitter System Design Demo</span>
+      <a href="https://github.com/minhmannh2001/twitter-system-design-demo" target="_blank" rel="noopener" class="resume-project-link">GitHub &rarr;</a>
+    </div>
+    <p class="resume-project-desc">Hybrid fanout feed, celebrity follow problem, load balancing, caching and message queues — all running locally with FastAPI, React, PostgreSQL, Redis, RabbitMQ and Nginx.</p>
+    <div class="resume-project-tech">
+      <span class="project-tag">Python</span>
+      <span class="project-tag">FastAPI</span>
+      <span class="project-tag">React</span>
+      <span class="project-tag">PostgreSQL</span>
+      <span class="project-tag">Redis</span>
+      <span class="project-tag">RabbitMQ</span>
+      <span class="project-tag">Nginx</span>
+    </div>
+  </div>
+</section>
+
+<!-- Achievements -->
+<section class="resume-section">
+  <h2 class="resume-section-title">Achievements</h2>
+  <div class="resume-achievement">
+    <span class="resume-achievement-title">Innovation Award</span> — Built an internal automation tool synthesizing data from Jira and Airtable to compute individual and team performance metrics, eliminating manual data entry during monthly, quarterly, and annual reviews.
+  </div>
+  <div class="resume-achievement">
+    <span class="resume-achievement-title">Hackathon 3rd Prize</span> — Built a system map visualization tool displaying inter-module code dependencies, enabling QA teams to accurately identify impacted areas per release and cut test planning time.
+  </div>
+  <div class="resume-achievement">
+    <span class="resume-achievement-title">Outstanding Contributor 2024</span> — Recognized for outstanding technical contributions, internal automation tooling, and active knowledge sharing.
+  </div>
+  <div class="resume-achievement">
+    <span class="resume-achievement-title">Employee of the Month</span> — Multiple awards for strong ownership mindset and effective problem-solving ability.
+  </div>
+</section>
+
+<!-- Education & Certifications / Interests -->
+<div class="resume-two-col">
+  <section class="resume-section">
+    <h2 class="resume-section-title">Education</h2>
+    <div class="resume-edu-degree">Bachelor of Computer Science</div>
+    <div class="resume-edu-school">Hanoi University of Science and Technology</div>
+    <div class="resume-edu-meta">Hanoi, Vietnam &middot; 2019 – 2024 &middot; Good</div>
+  </section>
+
+  <section class="resume-section">
+    <h2 class="resume-section-title">Certifications &amp; Interests</h2>
+    <div class="resume-achievement">
+      <span class="resume-achievement-title">TOEIC 815</span> — Issued Jun 2023
+    </div>
+    <div class="resume-interests">Running &middot; Swimming &middot; Football &middot; Reading &middot; Traveling</div>
+  </section>
+</div>

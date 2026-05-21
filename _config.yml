@@ -27,6 +27,7 @@ navbar-links:
   Open Learning: "openlearning"
   Series: "series"
   Projects: "projects"
+  Resume: "resume.html"
   Blog Timeline: "timeline.html"
 #  Resources:
 #    - Beautiful Jekyll: "http://deanattali.com/beautiful-jekyll/"

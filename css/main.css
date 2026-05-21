@@ -1365,6 +1365,334 @@ td.gutter {
   }
 }
 
+/* Resume Page */
+.resume-pdf-bar {
+  text-align: right;
+  margin-bottom: 24px;
+}
+
+.resume-pdf-btn {
+  display: inline-block;
+  padding: 7px 16px;
+  background: #0085a1;
+  color: #fff;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  text-decoration: none;
+}
+
+.resume-pdf-btn:hover {
+  background: #006f87;
+  color: #fff;
+  text-decoration: none;
+}
+
+.resume-header {
+  text-align: center;
+  padding: 28px 0 24px;
+  border-bottom: 2px solid #0085a1;
+  margin-bottom: 32px;
+}
+
+.resume-name {
+  font-size: 30px;
+  font-weight: 700;
+  color: #222;
+  margin: 0 0 6px;
+  font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+.resume-title {
+  font-size: 15px;
+  color: #0085a1;
+  font-weight: 600;
+  font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  margin-bottom: 12px;
+}
+
+.resume-contacts {
+  font-size: 13px;
+  color: #555;
+  font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 4px 8px;
+}
+
+.resume-contacts a {
+  color: #0085a1;
+  text-decoration: none;
+}
+
+.resume-contacts a:hover {
+  text-decoration: underline;
+}
+
+.resume-dot {
+  color: #bbb;
+}
+
+.resume-section {
+  margin-bottom: 28px;
+}
+
+.resume-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: #0085a1;
+  border-bottom: 1px solid #d8eef2;
+  padding-bottom: 6px;
+  margin-bottom: 14px;
+  font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+.resume-summary {
+  font-size: 14px;
+  color: #444;
+  line-height: 1.7;
+  margin: 0;
+}
+
+.resume-skills {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.resume-skill-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.resume-skill-label {
+  font-weight: 600;
+  font-size: 13px;
+  color: #444;
+  font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  min-width: 100px;
+  padding-top: 3px;
+  flex-shrink: 0;
+}
+
+.resume-skill-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.resume-job {
+  margin-bottom: 24px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.resume-job:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.resume-job-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 2px;
+}
+
+.resume-job-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #222;
+  font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+.resume-job-sep {
+  color: #bbb;
+}
+
+.resume-job-company {
+  font-size: 15px;
+  font-weight: 600;
+  color: #0085a1;
+  font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+.resume-job-period {
+  font-size: 13px;
+  color: #888;
+  font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  white-space: nowrap;
+}
+
+.resume-job-location {
+  font-size: 12px;
+  color: #aaa;
+  font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  margin-bottom: 8px;
+}
+
+.resume-job-intro {
+  font-size: 14px;
+  color: #444;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+
+.resume-job-sub {
+  font-size: 13px;
+  font-weight: 700;
+  color: #555;
+  font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  margin: 10px 0 4px;
+}
+
+.resume-job-bullets {
+  font-size: 14px;
+  color: #444;
+  padding-left: 18px;
+  margin-bottom: 6px;
+  line-height: 1.6;
+}
+
+.resume-job-bullets li {
+  margin-bottom: 4px;
+}
+
+.resume-job-tech {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 10px;
+}
+
+.resume-project {
+  padding-bottom: 18px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.resume-project:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.resume-project-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.resume-project-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #222;
+  font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+.resume-project-link {
+  font-size: 12px;
+  color: #0085a1;
+  font-weight: 600;
+  font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  text-decoration: none;
+}
+
+.resume-project-link:hover {
+  text-decoration: underline;
+  color: #006f87;
+}
+
+.resume-project-desc {
+  font-size: 13px;
+  color: #555;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+
+.resume-project-tech {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.resume-achievement {
+  font-size: 14px;
+  color: #444;
+  margin-bottom: 10px;
+  line-height: 1.6;
+}
+
+.resume-achievement-title {
+  font-weight: 700;
+  color: #222;
+  font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+.resume-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 32px;
+}
+
+.resume-edu-degree {
+  font-size: 14px;
+  font-weight: 700;
+  color: #222;
+  font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  margin-bottom: 2px;
+}
+
+.resume-edu-school {
+  font-size: 14px;
+  color: #0085a1;
+  font-weight: 600;
+  font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  margin-bottom: 2px;
+}
+
+.resume-edu-meta {
+  font-size: 13px;
+  color: #888;
+  font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+.resume-interests {
+  font-size: 14px;
+  color: #555;
+  margin-top: 10px;
+}
+
+@media (max-width: 600px) {
+  .resume-skill-row {
+    flex-direction: column;
+    gap: 4px;
+  }
+  .resume-skill-label {
+    min-width: unset;
+  }
+  .resume-two-col {
+    grid-template-columns: 1fr;
+  }
+  .resume-job-header {
+    flex-direction: column;
+  }
+  .resume-project-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
 .post-lang-switch {
   margin-bottom: 24px;
 }
