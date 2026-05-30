@@ -51,6 +51,28 @@
     ]
   },
   {
+    "slug": "build-dbdb-from-scratch",
+    "name": "Build DBDB from Scratch",
+    "description": "A 15-part series building a persistent key-value store from first principles in Python, inspired by the DBDB chapter of The Architecture of Open Source Applications. Covers append-only storage, immutable B-trees, value references, locking, atomic commits, compaction, AVL trees, and thread-safe updates.",
+    "posts": [
+      "/2026/04/21/build-dbdb-from-scratch-part-0-project-setup-en",
+      "/2026/04/22/build-dbdb-from-scratch-part-1-append-only-storage-en",
+      "/2026/04/23/build-dbdb-from-scratch-part-2-valueref-en",
+      "/2026/04/24/build-dbdb-from-scratch-part-3-binarynode-en",
+      "/2026/04/25/build-dbdb-from-scratch-part-4-logical-layer-en",
+      "/2026/04/26/build-dbdb-from-scratch-part-5-how-it-all-fits-en",
+      "/2026/04/27/build-dbdb-from-scratch-part-6-locking-across-layers-en",
+      "/2026/04/28/build-dbdb-from-scratch-part-7-commit-en",
+      "/2026/04/29/build-dbdb-from-scratch-part-8-interface-en",
+      "/2026/04/30/build-dbdb-from-scratch-part-9-cli-en",
+      "/2026/05/01/build-dbdb-from-scratch-part-10-compaction-en",
+      "/2026/05/02/build-dbdb-from-scratch-part-11-retrospective-en",
+      "/2026/05/03/build-dbdb-from-scratch-part-12-avl-tree-en",
+      "/2026/05/04/build-dbdb-from-scratch-part-13-btree-en",
+      "/2026/05/05/build-dbdb-from-scratch-part-14-atomic-update-en"
+    ]
+  },
+  {
     "slug": "build-your-own-ai-app-builder",
     "name": "Build your own X: A minimal AI app builder",
     "description": "A 10-part practical series on building an AI app builder with Next.js, Prisma, and WebContainer. It covers streaming chat, parser safety, workspace context engineering, state synchronization, and in-browser preview infrastructure end to end.",
@@ -65,6 +87,31 @@
       "/2026/04/16/build-your-own-app-builder-part-8-editor-state-and-sync-en",
       "/2026/04/17/build-your-own-app-builder-part-9-chat-ui-and-ai-context-en",
       "/2026/04/18/build-your-own-app-builder-part-10-webcontainer-preview-en"
+    ]
+  },
+  {
+    "slug": "building-a-computer-from-scratch",
+    "name": "Building a Computer from Scratch",
+    "description": "An 18-part series building a complete 16-bit computer from first principles in Go, based on the book But How Do It Know? by J. Clark Scott. Starting from a single wire and NAND gate, we build upward through storage primitives, the bus, arithmetic, registers, the ALU, 64K RAM, I/O, a CPU, and finally an assembler that runs real programs.",
+    "posts": [
+      "/2026/05/01/building-a-computer-from-scratch-part-1-en",
+      "/2026/05/03/building-a-computer-from-scratch-part-2-en",
+      "/2026/05/05/building-a-computer-from-scratch-part-3-en",
+      "/2026/05/07/building-a-computer-from-scratch-part-4-en",
+      "/2026/05/09/building-a-computer-from-scratch-part-5-en",
+      "/2026/05/11/building-a-computer-from-scratch-part-6-en",
+      "/2026/05/12/building-a-computer-from-scratch-part-7-en",
+      "/2026/05/14/building-a-computer-from-scratch-part-8-en",
+      "/2026/05/15/building-a-computer-from-scratch-part-9-en",
+      "/2026/05/17/building-a-computer-from-scratch-part-10-en",
+      "/2026/05/19/building-a-computer-from-scratch-part-11-en",
+      "/2026/05/20/building-a-computer-from-scratch-part-12-en",
+      "/2026/05/22/building-a-computer-from-scratch-part-13-en",
+      "/2026/05/23/building-a-computer-from-scratch-part-14-en",
+      "/2026/05/24/building-a-computer-from-scratch-part-15-en",
+      "/2026/05/26/building-a-computer-from-scratch-part-16-en",
+      "/2026/05/27/building-a-computer-from-scratch-part-17-en",
+      "/2026/05/29/building-a-computer-from-scratch-part-18-en"
     ]
   },
   {
