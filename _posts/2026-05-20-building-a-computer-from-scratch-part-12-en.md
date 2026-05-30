@@ -29,6 +29,8 @@ The ALU gives the CPU the ability to compute. Now it needs a place to store more
   Part 17 → Assembler & Running It
 ```
 
+> **Source code:** [github.com/minhmannh2001/simple-computer](https://github.com/minhmannh2001/simple-computer) — all 18 phases implemented in Go.
+
 > **Reading along with the book?** This phase covers "Numbers", "Addresses", and "First Half of the Computer" from _But How Do It Know?_ by J. Clark Scott.
 
 ---

@@ -33,6 +33,8 @@ That shared cable is the Bus.
   Part 17 → Assembler & Running It
 ```
 
+> **Source code:** [github.com/minhmannh2001/simple-computer](https://github.com/minhmannh2001/simple-computer) — all 18 phases implemented in Go.
+
 > **Reading along with the book?** This phase covers chapter "The Magic Bus" from _But How Do It Know?_ by J. Clark Scott.
 
 ---

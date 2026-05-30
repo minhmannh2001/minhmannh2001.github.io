@@ -29,6 +29,8 @@ Parts 1–7 gave us storage, a shared bus, bitwise operations, comparison logic,
   Part 17 → Assembler & Running It
 ```
 
+> **Source code:** [github.com/minhmannh2001/simple-computer](https://github.com/minhmannh2001/simple-computer) — all 18 phases implemented in Go.
+
 > **Reading along with the book?** This phase covers the "The Adder" chapter from _But How Do It Know?_ by J. Clark Scott.
 
 ---

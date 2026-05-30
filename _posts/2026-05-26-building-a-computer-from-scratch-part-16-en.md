@@ -29,6 +29,8 @@ Part 15 delivered a fully working CPU sitting next to a fully working RAM, a key
   Part 17 → Assembler & Running It
 ```
 
+> **Source code:** [github.com/minhmannh2001/simple-computer](https://github.com/minhmannh2001/simple-computer) — all 18 phases implemented in Go.
+
 > **Reading along with the book?** This phase covers "Ta Daa!" (complete) and "A Few More Words on Arithmetic" from _But How Do It Know?_ by J. Clark Scott.
 
 ---

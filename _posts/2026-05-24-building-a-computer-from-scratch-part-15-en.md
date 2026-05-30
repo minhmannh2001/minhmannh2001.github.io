@@ -29,6 +29,8 @@ Parts 1–14 built every component the CPU needs: storage primitives, a shared b
   Part 17 → Assembler & Running It
 ```
 
+> **Source code:** [github.com/minhmannh2001/simple-computer](https://github.com/minhmannh2001/simple-computer) — all 18 phases implemented in Go.
+
 > **Reading along with the book?** This phase covers "The Other Half of the Computer" through "Ta Daa!" from _But How Do It Know?_ by J. Clark Scott.
 
 ---

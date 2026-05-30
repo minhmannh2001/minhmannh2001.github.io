@@ -29,6 +29,8 @@ Part 4 gave us the bus — a 16-wire shared channel. But a bus with no traffic c
   Part 17 → Assembler & Running It
 ```
 
+> **Source code:** [github.com/minhmannh2001/simple-computer](https://github.com/minhmannh2001/simple-computer) — all 18 phases implemented in Go.
+
 > **Reading along with the book?** This phase covers the Enabler section from "Back to the Byte", then "More Gates" and "Messing With Bytes", including the shifter chapters from _But How Do It Know?_ by J. Clark Scott.
 
 ---

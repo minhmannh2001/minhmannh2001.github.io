@@ -29,6 +29,8 @@ Parts 1 and 2 built logic gates and multi-input gates. Every component we have s
   Part 17 → Assembler & Running It
 ```
 
+> **Source code:** [github.com/minhmannh2001/simple-computer](https://github.com/minhmannh2001/simple-computer) — all 18 phases implemented in Go.
+
 > **Reading along with the book?** This phase covers "Remember When", "What Can We Do With a Bit?", "A Rose By Any Other Name", and "Eight Is Enough" from _But How Do It Know?_ by J. Clark Scott.
 
 ---

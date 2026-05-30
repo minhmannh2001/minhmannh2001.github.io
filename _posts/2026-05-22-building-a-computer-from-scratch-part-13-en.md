@@ -29,6 +29,8 @@ The CPU and RAM can compute and store. But a computer that only talks to itself 
   Part 17 → Assembler & Running It
 ```
 
+> **Source code:** [github.com/minhmannh2001/simple-computer](https://github.com/minhmannh2001/simple-computer) — all 18 phases implemented in Go.
+
 > **Reading along with the book?** This phase covers "The Outside World" and "The Keyboard" from _But How Do It Know?_ by J. Clark Scott.
 
 ---

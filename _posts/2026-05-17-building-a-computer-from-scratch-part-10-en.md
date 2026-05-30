@@ -29,6 +29,8 @@ Parts 1–9 gave us storage, arithmetic, bus routing, and registers. Every compo
   Part 17 → Assembler & Running It
 ```
 
+> **Source code:** [github.com/minhmannh2001/simple-computer](https://github.com/minhmannh2001/simple-computer) — all 18 phases implemented in Go.
+
 > **Reading along with the book?** This phase covers the "The Clock", "Step by Step", and "Doing Something Useful" chapters from _But How Do It Know?_ by J. Clark Scott.
 
 ---

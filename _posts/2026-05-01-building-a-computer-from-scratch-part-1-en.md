@@ -35,6 +35,8 @@ Here's the full roadmap:
 
 This is Part 1. By the end, we'll have the two primitives everything else depends on: a `Wire` and a `Gate`.
 
+> **Source code:** [github.com/minhmannh2001/simple-computer](https://github.com/minhmannh2001/simple-computer) — all 18 phases implemented in Go.
+
 > **Reading along with the book?** This phase covers chapters "Just a Little Bit", "What The...?", "Simple Variations", and "Diagrams" from _But How Do It Know?_ by J. Clark Scott.
 
 ---

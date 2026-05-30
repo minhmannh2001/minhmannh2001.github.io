@@ -29,6 +29,8 @@ Parts 1–10 built all the ingredients: gates, storage cells, a shared bus, an a
   Part 17 → Assembler & Running It
 ```
 
+> **Source code:** [github.com/minhmannh2001/simple-computer](https://github.com/minhmannh2001/simple-computer) — all 18 phases implemented in Go.
+
 > **Reading along with the book?** This phase covers "Logic" and "The Arithmetic and Logic Unit" from _But How Do It Know?_ by J. Clark Scott.
 
 ---

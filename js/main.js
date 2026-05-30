@@ -261,6 +261,12 @@ var main = {
           visible++;
         }
       }
+      if (visible === 0 && items.length > 0) {
+        for (var j = 0; j < items.length; j++) {
+          items[j].style.display = '';
+        }
+        visible = items.length;
+      }
       var emptyEl = document.getElementById('series-detail-no-posts');
       if (emptyEl) {
         emptyEl.style.display = visible === 0 ? 'block' : 'none';

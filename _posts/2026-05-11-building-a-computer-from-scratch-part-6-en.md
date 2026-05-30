@@ -29,6 +29,8 @@ Parts 1–5 gave us logic gates, storage, a shared bus, and bitwise operations. 
   Part 17 → Assembler & Running It
 ```
 
+> **Source code:** [github.com/minhmannh2001/simple-computer](https://github.com/minhmannh2001/simple-computer) — all 18 phases implemented in Go.
+
 > **Reading along with the book?** This phase covers "The Comparator and Zero" and the Bus 1 section of "More of the Processor" from _But How Do It Know?_ by J. Clark Scott.
 
 ---

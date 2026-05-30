@@ -29,6 +29,8 @@ Part 1 gave us six gate types, each taking exactly two inputs. That's the right 
   Part 17 → Assembler & Running It
 ```
 
+> **Source code:** [github.com/minhmannh2001/simple-computer](https://github.com/minhmannh2001/simple-computer) — all 18 phases implemented in Go.
+
 > **Reading along with the book?** This phase covers the first part of "More Gate Combinations" from _But How Do It Know?_ by J. Clark Scott. Stop when you reach the Decoder — that's Phase 7.
 
 ---

@@ -29,6 +29,8 @@ Parts 1–8 gave us storage (`Word`), bus routing, bitwise operations, and arith
   Part 17 → Assembler & Running It
 ```
 
+> **Source code:** [github.com/minhmannh2001/simple-computer](https://github.com/minhmannh2001/simple-computer) — all 18 phases implemented in Go.
+
 > **Reading along with the book?** This phase covers the "Back to the Byte" and "The Magic Bus" chapters from _But How Do It Know?_ by J. Clark Scott.
 
 ---

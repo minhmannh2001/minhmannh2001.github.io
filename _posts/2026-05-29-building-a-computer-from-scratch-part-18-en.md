@@ -32,6 +32,9 @@ Part 17 covered the assembler and the programs themselves. This post covers the 
   Part 18 → Putting It All Together   ← you are here
 ```
 
+> **Source code:** [github.com/minhmannh2001/simple-computer](https://github.com/minhmannh2001/simple-computer) — all 18 phases implemented in Go.
+
+
 ---
 
 ## Why Generate Assembly Instead of Writing It?

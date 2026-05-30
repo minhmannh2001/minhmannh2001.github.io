@@ -53,6 +53,8 @@ Parts 1–16 were all hardware: logic gates, storage cells, arithmetic circuits,
    CPU + RAM + Keyboard + Display
 ```
 
+> **Source code:** [github.com/minhmannh2001/simple-computer](https://github.com/minhmannh2001/simple-computer) — all 18 phases implemented in Go.
+
 > **Reading along with the book?** This phase covers the instruction mnemonic tables and chapters "Hardware and Software", "Programs", and "Languages" from _But How Do It Know?_ by J. Clark Scott.
 
 ---

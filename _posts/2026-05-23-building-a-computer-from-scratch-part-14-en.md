@@ -29,6 +29,8 @@ Parts 1–13 built everything needed to compute and communicate: wires, gates, s
   Part 17 → Assembler & Running It
 ```
 
+> **Source code:** [github.com/minhmannh2001/simple-computer](https://github.com/minhmannh2001/simple-computer) — all 18 phases implemented in Go.
+
 > **Reading along with the book?** This phase covers "The Display Screen" from _But How Do It Know?_ by J. Clark Scott.
 
 ---
