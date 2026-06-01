@@ -81,7 +81,7 @@ layout: base
         {% include social-share.html %}
       {% endif %}
 
-      <ul class="pager blog-pager">
+      <ul class="pager blog-pager" id="blog-pager">
         {% if page.previous.url %}
         <li class="previous">
           <a href="{{ page.previous.url | prepend: site.baseurl | replace: '//', '/' }}" data-toggle="tooltip" data-placement="top" title="{{page.previous.title}}">&larr; Previous Post</a>
@@ -93,6 +93,40 @@ layout: base
         </li>
         {% endif %}
       </ul>
+
+      <script>
+      (function() {
+        try {
+          var ctx = sessionStorage.getItem('seriesNavContext');
+          if (!ctx) return;
+          var seriesData = {{ site.data.series | jsonify }};
+          var currentUrl = '{{ page.url }}'.replace(/\.html$/, '').replace(/\/$/, '');
+          var series = null;
+          for (var i = 0; i < seriesData.length; i++) {
+            if (seriesData[i].slug === ctx) { series = seriesData[i]; break; }
+          }
+          if (!series) { sessionStorage.removeItem('seriesNavContext'); return; }
+          var posts = series.posts;
+          var curIdx = -1;
+          for (var j = 0; j < posts.length; j++) {
+            if (posts[j].replace(/\.html$/, '').replace(/\/$/, '') === currentUrl) { curIdx = j; break; }
+          }
+          if (curIdx === -1) { sessionStorage.removeItem('seriesNavContext'); return; }
+          var prevUrl = curIdx > 0 ? posts[curIdx - 1] : null;
+          var nextUrl = curIdx < posts.length - 1 ? posts[curIdx + 1] : null;
+          var pager = document.getElementById('blog-pager');
+          if (!pager) return;
+          var html = '';
+          if (prevUrl) html += '<li class="previous"><a href="' + prevUrl + '">&larr; Previous in Series</a></li>';
+          if (nextUrl) html += '<li class="next"><a href="' + nextUrl + '">Next in Series &rarr;</a></li>';
+          pager.innerHTML = html;
+          var back = document.createElement('p');
+          back.style.cssText = 'text-align:center;margin-bottom:4px;';
+          back.innerHTML = '<a href="/series/' + ctx + '.html" style="font-size:0.85em;opacity:0.7;">← Back to &ldquo;' + series.name + '&rdquo;</a>';
+          pager.parentNode.insertBefore(back, pager);
+        } catch(e) {}
+      })();
+      </script>
 
       {% if page.comments %}
         <div class="disqus-comments">

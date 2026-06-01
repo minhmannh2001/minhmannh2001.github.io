@@ -170,6 +170,16 @@ layout: base
             }
           } catch (e) {}
         })();
+
+        // Store series context in sessionStorage when user clicks a post link
+        (function() {
+          var links = document.querySelectorAll('.series-post-item .post-link');
+          for (var i = 0; i < links.length; i++) {
+            links[i].addEventListener('click', function() {
+              sessionStorage.setItem('seriesNavContext', '{{ series.slug }}');
+            });
+          }
+        })();
         </script>
       </div>
       {% else %}
