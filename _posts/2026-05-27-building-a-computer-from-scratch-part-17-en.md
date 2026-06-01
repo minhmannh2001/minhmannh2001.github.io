@@ -115,7 +115,25 @@ JMP  myRoutine              ; jump to the routine
 
 Register 3 holds the return address by convention. The routine ends with `JR R3` — jump to whatever address R3 holds — which sends execution back to the instruction immediately after the original `CALL`.
 
-The return address is "the instruction immediately following this CALL." The assembler calculates it during pass 2 by tracking the current position as instructions are emitted. The programmer writes `CALL myRoutine` and never has to think about addresses.
+`CALL` has `Size() = 4` — two words for `DATA R3` and two for `JMP`. The assembler uses this to calculate the return address during pass 2.
+
+Here's the key detail: `NEXTINSTRUCTION` is not computed once — it's re-injected into the symbol table **before every instruction is emitted**:
+
+```go
+for i, ins := range instructions {
+    currentOffset := position + codeStartOffset
+    symbols[CURRENTINSTRUCTION] = currentOffset
+    symbols[NEXTINSTRUCTION] = currentOffset + ins.Size()  // recomputed each time
+
+    words, _ := ins.Emit(resolveLabel, resolveSymbol)
+    output = append(output, words...)
+    position += ins.Size()
+}
+```
+
+`CALL.Emit()` reads `NEXTINSTRUCTION` from the symbol resolver at emit time. Because it's freshly set to `currentOffset + 4` for this specific `CALL`, the return address is always the instruction immediately after this particular call — not some global value.
+
+If `NEXTINSTRUCTION` were computed once at the start of pass 2, every `CALL` in the program would emit the same wrong return address.
 
 ---
 
@@ -264,10 +282,13 @@ ST   R2, R3              ; save return address to RAM
 At the end of the routine, it loads that address back and jumps to it:
 
 ```asm
+CLF                          ; clear flags before returning
 DATA R3, %CALL-RETURN-ADDRESS
-LD   R3, R3              ; load return address from RAM
-JR   R3                  ; jump to R3 (return)
+LD   R3, R3                  ; load return address from RAM
+JR   R3                      ; jump to R3 (return)
 ```
+
+`CLF` (opcode `0x0060`) resets all four flags — Carry, A-larger, Equal, Zero — to zero. Instructions like `ADD` and `CMP` leave flag state behind. If those flags survive the return, a `JMPF` in the caller might branch on a stale result from inside the routine. Clearing flags before `JR R3` prevents that.
 
 This convention is entirely in software — the hardware has no idea it's a "call." R3 and `0xFF33` are just registers and RAM cells. The limitation is that routines can't call other routines that use the same convention without overwriting the return address — the examples handle this by saving and restoring carefully.
 

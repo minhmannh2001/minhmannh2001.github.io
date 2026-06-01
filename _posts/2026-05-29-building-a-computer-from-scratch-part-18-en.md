@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "Building a Computer from Scratch — Part 18: Putting It All Together"
-date: 2026-05-29 10:30:00 +0700
+date: 2026-05-29 00:00:00 +0700
 excerpt: >
   The three pieces that turn Go packages into a running simulator: a program generator that writes assembly from code, a bug that only appeared end-to-end, and a three-goroutine simulator that drives everything.
 comments: true
@@ -58,6 +58,33 @@ instructions.Add(asm.JMP{asm.LABEL{"main-getInput"}})
 The shared infrastructure — font loader, keyboard poller, display writer — is emitted once by `initialiseCommonCode()` and included in every program. The program-specific code defines `main` and any unique logic. Everything else is a Go function call.
 
 This means adding a new program doesn't mean copying infrastructure. It means writing a small Go function that calls the shared builders, then running the generator. The assembler never needs to know that multiple programs were produced from the same shared code.
+
+---
+
+## How the Keyboard Actually Sends Data to the CPU
+
+The poll loop in assembly looks like this:
+
+```asm
+OUT  Addr, R2        ; select keyboard adapter (address 0x000F)
+loop:
+  IN   Data, R3      ; read keycode
+  AND  R3, R3        ; set Zero flag if nothing pressed
+  JMPZ loop          ; keep waiting
+ST   KEYCODE-REGISTER, R3
+XOR  R2, R2
+OUT  Addr, R2        ; deselect keyboard
+```
+
+What actually happens at the hardware level is less obvious than it looks.
+
+**`OUT Addr, 0x000F` — selecting the adapter.** The CPU puts `0x000F` on the main bus and signals the IOBus with `SET + ADDRESS_MODE`. The `KeyboardAdapter` watches the main bus on every clock cycle. When it sees the address `0x000F` (bits 8–11 = 0, bits 12–15 = 1) alongside the right IOBus signals, it latches a single bit — `memoryBit = 1` — meaning "I am selected." Nothing else happens yet.
+
+**`IN Data, R3` — reading the data.** The CPU switches the IOBus to `ENABLE + DATA_MODE`. The adapter checks: is `memoryBit` set? Is the enable signal active? If both are true, it calls `keycodeRegister.Enable()`, which pushes the register's current value onto the main bus. The CPU reads the main bus and stores it in R3.
+
+The key insight is that the keyboard doesn't "send" anything on demand. A separate goroutine — `Keyboard.Run()` — listens to a Go channel for key events and calls `KeyboardInBus.SetValue(keycode)` continuously whenever a key is held. The `keycodeRegister` inside the adapter has its input wired to `KeyboardInBus` at all times. So the keycode is already sitting in the register. `IN Data` just opens the gate to let that value flow onto the main bus where the CPU can read it.
+
+When no key is pressed, `KeyboardInBus` holds 0. `IN Data` reads 0, `AND R3, R3` sets the Zero flag, `JMPZ` loops. When a key is pressed, `KeyboardInBus` holds the keycode. The next `IN Data` reads a non-zero value, the Zero flag is clear, and the loop exits.
 
 ---
 
