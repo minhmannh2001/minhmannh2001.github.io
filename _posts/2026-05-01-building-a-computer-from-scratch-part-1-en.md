@@ -35,6 +35,12 @@ Here's the full roadmap:
 
 This is Part 1. By the end, we'll have the two primitives everything else depends on: a `Wire` and a `Gate`.
 
+Here's what the finished computer looks like running — a CPU built from NAND gates driving a live display:
+
+<video width="100%" controls muted loop playsinline style="border-radius:6px;margin:1rem 0;">
+  <source src="/img/simple-computer/demo.mp4" type="video/mp4">
+</video>
+
 > **Source code:** [github.com/minhmannh2001/simple-computer](https://github.com/minhmannh2001/simple-computer) — all 18 phases implemented in Go.
 
 > **Reading along with the book?** This phase covers chapters "Just a Little Bit", "What The...?", "Simple Variations", and "Diagrams" from _But How Do It Know?_ by J. Clark Scott.

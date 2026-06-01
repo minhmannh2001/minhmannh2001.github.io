@@ -186,3 +186,7 @@ Seventeen phases, one complete 16-bit computer built from NAND gates up:
 | System | SimpleComputer, GLFW simulator |
 
 The whole thing starts from a `Wire` — a named boolean — and ends at a window on your screen where you can type characters and watch them render, driven by a CPU built from logic gates in Go.
+
+<video width="100%" controls muted loop playsinline style="border-radius:6px;margin:1rem 0;">
+  <source src="/img/simple-computer/demo.mp4" type="video/mp4">
+</video>
