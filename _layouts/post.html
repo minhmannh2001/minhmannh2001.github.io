@@ -81,52 +81,66 @@ layout: base
         {% include social-share.html %}
       {% endif %}
 
-      <ul class="pager blog-pager" id="blog-pager">
-        {% if page.previous.url %}
-        <li class="previous">
-          <a href="{{ page.previous.url | prepend: site.baseurl | replace: '//', '/' }}" data-toggle="tooltip" data-placement="top" title="{{page.previous.title}}">&larr; Previous Post</a>
-        </li>
-        {% endif %}
-        {% if page.next.url %}
-        <li class="next">
-          <a href="{{ page.next.url | prepend: site.baseurl | replace: '//', '/' }}" data-toggle="tooltip" data-placement="top" title="{{page.next.title}}">Next Post &rarr;</a>
-        </li>
-        {% endif %}
-      </ul>
+      {% comment %}
+        Single-pass scan: track prev_candidate as we walk the series post list.
+        When we hit the current post, prev_candidate = prev URL.
+        The next iteration gives next URL.
+      {% endcomment %}
+      {% assign cur_slug = page.url | remove: '.html' | split: '/' | last %}
+      {% assign post_series       = nil %}
+      {% assign series_prev_url   = '' %}
+      {% assign series_next_url   = '' %}
 
-      <script>
-      (function() {
-        try {
-          var ctx = sessionStorage.getItem('seriesNavContext');
-          if (!ctx) return;
-          var seriesData = {{ site.data.series | jsonify }};
-          var currentUrl = '{{ page.url }}'.replace(/\.html$/, '').replace(/\/$/, '');
-          var series = null;
-          for (var i = 0; i < seriesData.length; i++) {
-            if (seriesData[i].slug === ctx) { series = seriesData[i]; break; }
-          }
-          if (!series) { sessionStorage.removeItem('seriesNavContext'); return; }
-          var posts = series.posts;
-          var curIdx = -1;
-          for (var j = 0; j < posts.length; j++) {
-            if (posts[j].replace(/\.html$/, '').replace(/\/$/, '') === currentUrl) { curIdx = j; break; }
-          }
-          if (curIdx === -1) { sessionStorage.removeItem('seriesNavContext'); return; }
-          var prevUrl = curIdx > 0 ? posts[curIdx - 1] : null;
-          var nextUrl = curIdx < posts.length - 1 ? posts[curIdx + 1] : null;
-          var pager = document.getElementById('blog-pager');
-          if (!pager) return;
-          var html = '';
-          if (prevUrl) html += '<li class="previous"><a href="' + prevUrl + '">&larr; Previous in Series</a></li>';
-          if (nextUrl) html += '<li class="next"><a href="' + nextUrl + '">Next in Series &rarr;</a></li>';
-          pager.innerHTML = html;
-          var back = document.createElement('p');
-          back.style.cssText = 'text-align:center;margin-bottom:4px;';
-          back.innerHTML = '<a href="/series/' + ctx + '.html" style="font-size:0.85em;opacity:0.7;">← Back to &ldquo;' + series.name + '&rdquo;</a>';
-          pager.parentNode.insertBefore(back, pager);
-        } catch(e) {}
-      })();
-      </script>
+      {% for series in site.data.series %}
+        {% assign prev_candidate = '' %}
+        {% assign found          = false %}
+        {% for s_url in series.posts %}
+          {% if found %}
+            {% assign series_next_url = s_url %}
+            {% break %}
+          {% endif %}
+          {% assign s_slug = s_url | split: '/' | last %}
+          {% if s_slug == cur_slug %}
+            {% assign found           = true %}
+            {% assign post_series     = series %}
+            {% assign series_prev_url = prev_candidate %}
+          {% else %}
+            {% assign prev_candidate = s_url %}
+          {% endif %}
+        {% endfor %}
+        {% if post_series %}{% break %}{% endif %}
+      {% endfor %}
+
+      {% if post_series %}
+        <p style="text-align:center;margin-bottom:4px;">
+          <a href="{{ site.baseurl }}/series/{{ post_series.slug }}.html" style="font-size:0.85em;opacity:0.7;">← Back to &ldquo;{{ post_series.name }}&rdquo;</a>
+        </p>
+        <ul class="pager blog-pager">
+          {% if series_prev_url != '' %}
+          <li class="previous">
+            <a href="{{ series_prev_url }}">&larr; Previous in Series</a>
+          </li>
+          {% endif %}
+          {% if series_next_url != '' %}
+          <li class="next">
+            <a href="{{ series_next_url }}">Next in Series &rarr;</a>
+          </li>
+          {% endif %}
+        </ul>
+      {% else %}
+        <ul class="pager blog-pager">
+          {% if page.previous.url %}
+          <li class="previous">
+            <a href="{{ page.previous.url | prepend: site.baseurl | replace: '//', '/' }}" data-toggle="tooltip" data-placement="top" title="{{ page.previous.title }}">&larr; Previous Post</a>
+          </li>
+          {% endif %}
+          {% if page.next.url %}
+          <li class="next">
+            <a href="{{ page.next.url | prepend: site.baseurl | replace: '//', '/' }}" data-toggle="tooltip" data-placement="top" title="{{ page.next.title }}">Next Post &rarr;</a>
+          </li>
+          {% endif %}
+        </ul>
+      {% endif %}
 
       {% if page.comments %}
         <div class="disqus-comments">
