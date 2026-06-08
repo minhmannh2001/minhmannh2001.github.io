@@ -119,15 +119,15 @@
     "name": "Building circle-db from Scratch",
     "description": "A 9-phase series building circle-db — a Datomic-inspired EAV database in Python and Clojure — from scratch. Covers the core data model, in-memory storage, four indexes (EAVT, AVET, VEAT, VAET), the CRUD write path, transactions, query planning, query execution, and time-travel with graph traversal.",
     "posts": [
-      "/2026/06/02/circle-db-phase-01-data-model",
-      "/2026/06/02/circle-db-phase-02-in-memory-storage",
-      "/2026/06/02/circle-db-phase-03-eavt-index",
-      "/2026/06/02/circle-db-phase-04-four-indexes",
-      "/2026/06/04/circle-db-phase-05-crud-write-path",
-      "/2026/06/04/circle-db-phase-06-transactions",
-      "/2026/06/05/circle-db-phase-07-query-planning",
-      "/2026/06/08/circle-db-phase-08-query-execution",
-      "/2026/06/08/circle-db-phase-09-time-travel-graph"
+      "/2026/06/02/circle-db-phase-01-data-model-en",
+      "/2026/06/02/circle-db-phase-02-in-memory-storage-en",
+      "/2026/06/02/circle-db-phase-03-eavt-index-en",
+      "/2026/06/02/circle-db-phase-04-four-indexes-en",
+      "/2026/06/04/circle-db-phase-05-crud-write-path-en",
+      "/2026/06/04/circle-db-phase-06-transactions-en",
+      "/2026/06/05/circle-db-phase-07-query-planning-en",
+      "/2026/06/08/circle-db-phase-08-query-execution-en",
+      "/2026/06/08/circle-db-phase-09-time-travel-graph-en"
     ]
   },
   {

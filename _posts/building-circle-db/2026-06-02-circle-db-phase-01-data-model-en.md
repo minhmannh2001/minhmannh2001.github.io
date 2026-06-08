@@ -5,7 +5,6 @@ subtitle: "The data model doesn't just describe current state — it encodes the
 tags: [database, clojure, python, learning]
 readtime: true
 gh-repo: minhmannh2001/circle-db
-gh-badge: [star, fork]
 ---
 
 Most databases you've used store data in rows. A `users` table has columns — `id`, `name`, `email` — and each row is one user. It feels natural because it mirrors a spreadsheet. But this model has a hidden assumption baked in: **you have to decide your schema upfront**. Add a new attribute? Alter the table. Different entities need different attributes? Create separate tables, then JOIN.

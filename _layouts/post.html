@@ -22,11 +22,15 @@ layout: base
                 {% when 'watch'%}
                   <iframe src="https://ghbtns.com/github-btn.html?user={{ gh_user }}&repo={{ gh_repo }}&type=watch&v=2&count=true" frameborder="0" scrolling="0" width="120px" height="20px"></iframe>
                 {% when 'fork'%}
-                  <iframe src="https://ghbtns.com/github-btn.html?user={{ gh_user }}&repo={{ gh_repo }}&type=fork&count=true" frameborder="0" scrolling="0" width="120px" height="20px"></iframe>  
+                  <iframe src="https://ghbtns.com/github-btn.html?user={{ gh_user }}&repo={{ gh_repo }}&type=fork&count=true" frameborder="0" scrolling="0" width="120px" height="20px"></iframe>
                 {% when 'follow'%}
                   <iframe src="https://ghbtns.com/github-btn.html?user={{ gh_user }}&type=follow&count=true" frameborder="0" scrolling="0" width="220px" height="20px"></iframe>
               {% endcase %}
             {% endfor %}
+          {% else %}
+            <a href="https://github.com/{{ gh_user }}/{{ gh_repo }}" target="_blank" rel="noopener noreferrer" title="{{ gh_user }}/{{ gh_repo }}">
+              <i class="fa fa-github fa-lg"></i>
+            </a>
           {% endif %}
         </div>
       {% endif %}

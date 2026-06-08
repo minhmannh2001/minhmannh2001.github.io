@@ -5,7 +5,6 @@ subtitle: "The structure of an index directly encodes which queries are fast and
 tags: [database, clojure, python, learning]
 readtime: true
 gh-repo: minhmannh2001/circle-db
-gh-badge: [star, fork]
 ---
 
 ## The Phone Book Problem

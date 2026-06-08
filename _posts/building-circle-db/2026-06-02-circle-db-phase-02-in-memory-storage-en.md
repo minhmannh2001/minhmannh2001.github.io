@@ -5,7 +5,6 @@ subtitle: "Storage is deliberately dumb — it has one job, and that's all it ne
 tags: [database, clojure, python, learning]
 readtime: true
 gh-repo: minhmannh2001/circle-db
-gh-badge: [star, fork]
 ---
 
 ## The Shelf and the Card Catalog

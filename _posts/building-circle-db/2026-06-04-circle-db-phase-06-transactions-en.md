@@ -5,7 +5,6 @@ subtitle: "Immutability makes 'what-if' free — no rollback, no savepoints, jus
 tags: [database, clojure, python, learning]
 readtime: true
 gh-repo: minhmannh2001/circle-db
-gh-badge: [star, fork]
 ---
 
 ## Atomic Writes, Layered History

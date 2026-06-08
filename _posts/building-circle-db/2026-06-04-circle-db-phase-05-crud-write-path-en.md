@@ -5,7 +5,6 @@ subtitle: "Every write must update storage and all four indexes atomically — n
 tags: [database, clojure, python, learning]
 readtime: true
 gh-repo: minhmannh2001/circle-db
-gh-badge: [star, fork]
 ---
 
 ## A History Book That Can Never Be Erased

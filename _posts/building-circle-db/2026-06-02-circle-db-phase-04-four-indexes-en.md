@@ -5,7 +5,6 @@ subtitle: "Every fact is stored four times — once per index. The key ordering 
 tags: [database, clojure, python, learning]
 readtime: true
 gh-repo: minhmannh2001/circle-db
-gh-badge: [star, fork]
 ---
 
 ## The Same Books, Sorted Four Ways
